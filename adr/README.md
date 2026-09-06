@@ -5,6 +5,9 @@
 - [ADR-001: ドキュメントの責務を分ける](0001-document-harness.md) — accepted
 - [ADR-002: アプリケーションの技術構成](0002-application-stack.md) — proposed
 
+- [ADR-003: アプリ定義を作成経路から独立させる](0003-schema-authoring-boundary.md) — proposed
+- [ADR-004: 木を情報の構造として表す](0004-tree-design-system.md) — proposed
+
 ## 記録形式
 
 ファイル名は `NNNN-topic.md`、先頭のメタデータは `id: ADR-NNN`、`status:`、`date: YYYY-MM-DD` です。状態は `proposed` / `accepted` / `rejected` / `superseded` を使います。
