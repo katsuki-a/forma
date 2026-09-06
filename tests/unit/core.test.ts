@@ -166,9 +166,8 @@ describe("FRM-013 入力型の保存契約", () => {
       const value = typeof valid === "object" ? [...valid] : valid;
       app = await service.saveRecord(app.id, app.revision, { value });
       expect(app.records[0].values.value).toEqual(valid);
-      expect(validateValues(app.published!, { value: invalid })).not.toEqual(
-        [],
-      );
+      if (!app.published) throw new Error("反映済みの定義がありません");
+      expect(validateValues(app.published, { value: invalid })).not.toEqual([]);
     },
   );
 });

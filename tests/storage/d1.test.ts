@@ -1,4 +1,4 @@
-import { templates } from "../../src/contracts/model.ts";
+import { capabilityDefinition } from "../fixtures/capabilities.ts";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +7,7 @@ import { Miniflare } from "miniflare";
 import { afterAll, beforeAll, beforeEach, expect, test } from "vitest";
 import { createService } from "../../src/domain/service.ts";
 import { d1Repository } from "../../src/server/d1-repository.ts";
+import { capabilityContract } from "../capability-contract.ts";
 import { repositoryContract } from "../repository-contract.ts";
 
 const persistence = mkdtempSync(join(tmpdir(), "forma-storage-test-"));
@@ -51,25 +52,32 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await database.prepare("DELETE FROM applications").run();
+  await database.prepare("DELETE FROM announcements").run();
 });
 afterAll(async () => {
   await runtime?.dispose();
   rmSync(persistence, { recursive: true, force: true });
 });
 repositoryContract(() => Promise.resolve(d1Repository(database)));
+capabilityContract(() => Promise.resolve(d1Repository(database)));
 test("FRM-041 ランタイム再起動後も定義と記録が残る", async () => {
   const service = createService(d1Repository(database), {
     id: () => crypto.randomUUID(),
     now: () => "2026-09-06T00:00:00Z",
     actor: "test-user",
   });
-  let app = await service.create(templates[0]);
+  let app = await service.create(capabilityDefinition);
   app = await service.publish(app.id, app.revision);
   app = await service.saveRecord(app.id, app.revision, {
     title: "再起動後も残る",
+  });
+  const news = await service.saveAnnouncement({
+    title: "再起動",
+    body: "永続化",
   });
   await runtime.dispose();
   runtime = createRuntime();
   database = await runtime.getD1Database("DB");
   expect(await d1Repository(database).get(app.id)).toEqual(app);
+  expect(await d1Repository(database).listAnnouncements()).toEqual([news]);
 });

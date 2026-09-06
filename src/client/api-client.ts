@@ -1,6 +1,16 @@
 import { z } from "zod";
-import { AppError, appSchema, errorSchema } from "../contracts/model.ts";
-import type { Definition, Values } from "../contracts/model.ts";
+import type {
+  Definition,
+  Values,
+  WorkflowInput,
+  AnnouncementInput,
+} from "../contracts/model.ts";
+import {
+  AppError,
+  appSchema,
+  errorSchema,
+  announcementSchema,
+} from "../contracts/model.ts";
 
 // 通信は注入可能。サーバー実装・DB型・Honoの型に依存しない。
 export function createClient(
@@ -58,6 +68,29 @@ export function createClient(
     return result.data;
   }
   return {
+    listAnnouncements: () =>
+      request("/announcements", z.array(announcementSchema)),
+    saveAnnouncement: (input: AnnouncementInput) =>
+      request("/announcements", announcementSchema, "POST", input),
+    deleteAnnouncement: (id: string, revision: number) =>
+      request(
+        `/announcements/${encodeURIComponent(id)}`,
+        z.object({ ok: z.literal(true) }),
+        "DELETE",
+        { revision },
+      ),
+    updateWorkflow: (
+      id: string,
+      revision: number,
+      recordId: string,
+      input: WorkflowInput,
+    ) =>
+      request(
+        `/apps/${encodeURIComponent(id)}/records/${encodeURIComponent(recordId)}/workflow`,
+        appSchema,
+        "POST",
+        { revision, ...input },
+      ),
     list: () => request("/apps", z.array(appSchema)),
     get: (id: string) => request(`/apps/${encodeURIComponent(id)}`, appSchema),
     create: (definition: Definition) =>

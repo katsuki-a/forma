@@ -138,12 +138,13 @@
           <div class="sample-grid">
             <form class="surface" id="sample-form">
               <div class="field">
-                <label for="field-name">項目名</label
-                ><input
+                <label for="field-name">項目名</label>
+                <input
                   id="field-name"
                   value="品名"
                   aria-describedby="name-help"
-                /><span id="name-help" class="caption subtle"
+                />
+                <span id="name-help" class="caption subtle"
                   >みんなが分かる短い名前にします。</span
                 >
               </div>
@@ -155,7 +156,7 @@
                   <option>日付</option>
                 </select>
               </div>
-              <button class="button" type="submit">下書きの見本を確認</button>
+              <button type="submit" class="button">下書きの見本を確認</button>
               <p
                 class="feedback"
                 id="sample-feedback"
@@ -167,8 +168,8 @@
             </form>
             <div class="surface">
               <div class="field">
-                <label for="invalid-name">項目名（エラーの見本）</label
-                ><input
+                <label for="invalid-name">項目名（エラーの見本）</label>
+                <input
                   id="invalid-name"
                   value="品名"
                   aria-invalid="true"
@@ -178,13 +179,14 @@
                 >
               </div>
               <div class="field">
-                <label for="readonly-id">レコード番号（自動設定）</label
-                ><input
+                <label for="readonly-id">レコード番号（自動設定）</label>
+                <input
                   id="readonly-id"
                   value="0012"
                   disabled
                   aria-describedby="id-help"
-                /><span id="id-help" class="caption subtle"
+                />
+                <span id="id-help" class="caption subtle"
                   >登録時に自動で設定されます。</span
                 >
               </div>
@@ -249,18 +251,21 @@
           <p class="subtle">Tabキーでもフォーカスを確認できます。</p>
           <div class="button-row section">
             <button
+              type="button"
               class="button"
               data-feedback="主操作の見た目を確認しました。保存は行っていません。"
             >
               主操作の見本
             </button>
             <button
+              type="button"
               class="button button-secondary"
               data-feedback="補助操作の見た目を確認しました。"
             >
               補助操作の見本
             </button>
             <button
+              type="button"
               class="button button-danger"
               data-feedback="削除操作の見た目を確認しました。データは削除していません。"
             >
@@ -294,12 +299,12 @@
             : "項目名を入力してください。";
           if (!name) input.focus();
         });
-      document.querySelectorAll("[data-feedback]").forEach((button) =>
+      document.querySelectorAll("[data-feedback]").forEach((button) => {
         button.addEventListener("click", () => {
           document.getElementById("state-feedback").textContent =
             button.dataset.feedback;
-        }),
-      );
+        });
+      });
     </script>
   </body>
 </html>

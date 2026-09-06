@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { evaluateFormula, parseFormula } from "./calculation.ts";
 
 export const fieldTypes = [
   "text",
@@ -14,6 +15,10 @@ export const fieldTypes = [
   "url",
   "tel",
   "email",
+  "calculation",
+  "user",
+  "organization",
+  "group",
 ] as const;
 export const fieldLabels: Record<FieldType, string> = {
   text: "一行テキスト",
@@ -29,16 +34,65 @@ export const fieldLabels: Record<FieldType, string> = {
   url: "URL",
   tel: "電話番号",
   email: "メールアドレス",
+  calculation: "計算",
+  user: "ユーザー",
+  organization: "組織",
+  group: "グループ",
 };
 export const identifier = z
   .string()
   .regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/)
   .refine((v) => !["__proto__", "constructor", "prototype"].includes(v));
+export const uniqueFieldTypes: readonly FieldType[] = [
+  "text",
+  "number",
+  "url",
+  "tel",
+  "email",
+];
+export const candidateSchema = z.strictObject({
+  id: identifier,
+  name: z.string().trim().min(1),
+});
+export const directorySchema = z.strictObject({
+  users: z.array(candidateSchema),
+  organizations: z.array(candidateSchema),
+  groups: z.array(candidateSchema),
+});
+export const workflowSchema = z.strictObject({
+  initialState: identifier,
+  states: z
+    .array(
+      z.strictObject({
+        id: identifier,
+        name: z.string().trim().min(1),
+        assignees: z.array(identifier),
+      }),
+    )
+    .min(1),
+  transitions: z.array(
+    z.strictObject({
+      id: identifier,
+      name: z.string().trim().min(1),
+      from: identifier,
+      to: identifier,
+    }),
+  ),
+});
+export type Directory = z.infer<typeof directorySchema>;
+export type Workflow = z.infer<typeof workflowSchema>;
+export const emptyDirectory = (): Directory => ({
+  users: [],
+  organizations: [],
+  groups: [],
+});
 export const fieldSchema = z.strictObject({
   id: identifier,
   label: z.string().trim().min(1),
   type: z.enum(fieldTypes),
   options: z.array(z.string().trim().min(1)).optional(),
+  unique: z.boolean().optional(),
+  formula: z.string().optional(),
 });
 export const definitionSchema = z
   .strictObject({
@@ -48,6 +102,8 @@ export const definitionSchema = z
     icon: z.string(),
     theme: z.enum(["forest", "leaf", "moss"]),
     fields: z.array(fieldSchema),
+    directory: directorySchema.optional(),
+    workflow: workflowSchema.optional(),
   })
   .superRefine((definition, ctx) => {
     const ids = new Set<string>();
@@ -59,6 +115,33 @@ export const definitionSchema = z
           message: "項目IDが重複しています。",
         });
       ids.add(field.id);
+      if (field.unique && !uniqueFieldTypes.includes(field.type))
+        ctx.addIssue({
+          code: "custom",
+          path: ["fields", index, "unique"],
+          message: "この種類には重複禁止を設定できません。",
+        });
+      if (field.type === "calculation") {
+        try {
+          const formula = parseFormula(field.formula ?? "");
+          if (
+            formula.references.some(
+              (id) =>
+                definition.fields.find((candidate) => candidate.id === id)
+                  ?.type !== "number",
+            )
+          )
+            throw new Error("式には数値項目だけを参照してください。");
+        } catch (error) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["fields", index, "formula"],
+            message:
+              error instanceof Error ? error.message : "式を確認してください。",
+          });
+        }
+      }
+
       if (
         ["radio", "select", "checkbox", "multiselect"].includes(field.type) &&
         (!field.options?.length ||
@@ -71,6 +154,57 @@ export const definitionSchema = z
         });
       }
     });
+    for (const [kind, candidates] of Object.entries(
+      definition.directory ?? emptyDirectory(),
+    )) {
+      if (
+        new Set(candidates.map((candidate) => candidate.id)).size !==
+        candidates.length
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["directory", kind],
+          message: "候補IDを重複しない値にしてください。",
+        });
+    }
+    if (definition.workflow) {
+      const workflow = definition.workflow;
+      const states = new Set(workflow.states.map((state) => state.id));
+      const users = new Set(definition.directory?.users.map((user) => user.id));
+      if (
+        states.size !== workflow.states.length ||
+        !states.has(workflow.initialState)
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["workflow"],
+          message: "状態IDの重複と初期状態を確認してください。",
+        });
+      if (
+        workflow.states.some(
+          (state) =>
+            new Set(state.assignees).size !== state.assignees.length ||
+            state.assignees.some((id) => !users.has(id)),
+        )
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["workflow"],
+          message: "担当候補は登録済みのユーザーから選んでください。",
+        });
+      if (
+        new Set(workflow.transitions.map((item) => item.id)).size !==
+          workflow.transitions.length ||
+        workflow.transitions.some(
+          (item) => !states.has(item.from) || !states.has(item.to),
+        )
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["workflow"],
+          message: "遷移IDの重複と遷移元・遷移先の状態を確認してください。",
+        });
+    }
   });
 export type FieldType = (typeof fieldTypes)[number];
 export type Field = z.infer<typeof fieldSchema>;
@@ -97,6 +231,10 @@ export const recordSchema = z.object({
   updatedAt: z.string(),
   createdBy: z.string(),
   updatedBy: z.string(),
+  workflow: z
+    .object({ stateId: identifier, assigneeId: identifier.nullable() })
+    .nullable()
+    .optional(),
 });
 export type AppRecord = z.infer<typeof recordSchema>;
 export const appSchema = z.object({
@@ -168,11 +306,21 @@ export function validateValues(
       message: "定義にない項目が含まれています。",
     }));
   for (const field of definition.fields) {
+    if (field.type === "calculation") continue;
     const value = values[field.id];
     if (value === undefined || value === null || value === "") continue;
     let valid: boolean;
     if (field.type === "number")
       valid = typeof value === "number" && Number.isFinite(value);
+    else if (["user", "organization", "group"].includes(field.type))
+      valid =
+        Array.isArray(value) &&
+        new Set(value).size === value.length &&
+        value.every((id) =>
+          fieldCandidates(definition, field.type).some(
+            (candidate) => candidate.id === id,
+          ),
+        );
     else if (field.type === "checkbox" || field.type === "multiselect")
       valid =
         Array.isArray(value) &&
@@ -243,3 +391,92 @@ export const emptyDefinition = (): Definition => ({
   theme: "forest",
   fields: [],
 });
+
+export function fieldCandidates(definition: Definition, type: FieldType) {
+  const directory = definition.directory ?? emptyDirectory();
+  return type === "user"
+    ? directory.users
+    : type === "organization"
+      ? directory.organizations
+      : type === "group"
+        ? directory.groups
+        : [];
+}
+export function prepareValues(
+  definition: Definition,
+  input: unknown,
+): { values: Values; issues: Issue[] } {
+  const issues = validateValues(definition, input);
+  const parsed = valuesSchema.safeParse(input);
+  if (!parsed.success) return { values: {}, issues };
+  const values = structuredClone(parsed.data);
+  for (const field of definition.fields.filter(
+    (field) => field.type === "calculation",
+  )) {
+    try {
+      values[field.id] = evaluateFormula(field.formula ?? "", values);
+    } catch (error) {
+      values[field.id] = null;
+      issues.push({
+        fieldId: field.id,
+        code: "calculation",
+        message: `${field.label}: ${error instanceof Error ? error.message : "計算できません。"}`,
+      });
+    }
+  }
+  return { values, issues };
+}
+export function uniqueIssues(
+  definition: Definition,
+  records: Pick<AppRecord, "id" | "number" | "values">[],
+): Issue[] {
+  const issues: Issue[] = [];
+  for (const field of definition.fields.filter((field) => field.unique)) {
+    const seen = new Map<string | number, number>();
+    for (const record of records) {
+      const value = record.values[field.id];
+      if (
+        value === undefined ||
+        value === null ||
+        value === "" ||
+        Array.isArray(value)
+      )
+        continue;
+      const previous = seen.get(value);
+      if (previous !== undefined)
+        issues.push({
+          fieldId: field.id,
+          code: "duplicate",
+          message: `${field.label}が記録${previous}と記録${record.number}で重複しています。`,
+        });
+      else seen.set(value, record.number);
+    }
+  }
+  return issues;
+}
+export const announcementInputSchema = z
+  .strictObject({
+    id: z.string().optional(),
+    revision: z.number().int().nonnegative().optional(),
+    title: z.string().trim().min(1, "タイトルを入力してください。"),
+    body: z.string(),
+  })
+  .refine(
+    (input) => (input.id === undefined) === (input.revision === undefined),
+    "更新にはIDとリビジョンが必要です。",
+  );
+export type AnnouncementInput = z.infer<typeof announcementInputSchema>;
+export const announcementSchema = z.object({
+  id: z.string(),
+  revision: z.number().int().nonnegative(),
+  title: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Announcement = z.infer<typeof announcementSchema>;
+export const workflowInputSchema = z.strictObject({
+  transitionId: identifier.optional(),
+  assigneeId: identifier.nullable().optional(),
+});
+export type WorkflowInput = z.infer<typeof workflowInputSchema>;

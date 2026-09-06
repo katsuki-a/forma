@@ -1,7 +1,7 @@
-import { useId, useState } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { validateValues } from "../contracts/model.ts";
+import { useId, useState } from "react";
 import type { Definition, Field, Issue, Values } from "../contracts/model.ts";
+import { prepareValues, fieldCandidates } from "../contracts/model.ts";
 
 export function Button({
   kind = "primary",
@@ -42,12 +42,14 @@ export function FieldInput({
   onChange,
   issues,
   disabled = false,
+  candidates = [],
 }: {
   field: Field;
   value: Values[string] | undefined;
   onChange: (value: Values[string]) => void;
   issues: Issue[];
   disabled?: boolean;
+  candidates?: { id: string; name: string }[];
 }) {
   const id = useId();
   const error = issues.find((issue) => issue.fieldId === field.id);
@@ -62,7 +64,45 @@ export function FieldInput({
     typeof value === "string" || typeof value === "number" ? value : "";
   const selected = Array.isArray(value) ? value : [];
   let input: ReactNode;
-  if (field.type === "textarea")
+  if (field.type === "calculation")
+    input = <input {...props} value={text} readOnly aria-label={field.label} />;
+  else if (["user", "organization", "group"].includes(field.type)) {
+    return (
+      <fieldset
+        className="choice-field"
+        disabled={disabled}
+        aria-describedby={error ? `${id}-error` : undefined}
+      >
+        <legend>{field.label}</legend>
+        {candidates.map((candidate) => (
+          <label className="choice" key={candidate.id}>
+            <input
+              type="checkbox"
+              checked={selected.includes(candidate.id)}
+              onChange={(event) =>
+                onChange(
+                  event.target.checked
+                    ? [...selected, candidate.id]
+                    : selected.filter((id) => id !== candidate.id),
+                )
+              }
+            />
+            {candidate.name}
+          </label>
+        ))}
+        {candidates.length === 0 && (
+          <p className="subtle">
+            候補がありません。項目編集画面で候補を登録してください。
+          </p>
+        )}
+        {error && (
+          <p className="error" id={`${id}-error`}>
+            {error.message}
+          </p>
+        )}
+      </fieldset>
+    );
+  } else if (field.type === "textarea")
     input = (
       <textarea
         {...props}
@@ -191,15 +231,16 @@ export function RecordForm({
   const [values, setValues] = useState<Values>(structuredClone(initial));
   const [issues, setIssues] = useState<Issue[]>([]);
   const [checked, setChecked] = useState(false);
+  const prepared = prepareValues(definition, values);
   return (
     <form
       className="record-form"
       onSubmit={(event) => {
         event.preventDefault();
-        const errors = validateValues(definition, values);
+        const errors = prepared.issues;
         setIssues(errors);
         setChecked(errors.length === 0);
-        if (errors.length === 0) void onSave?.(values);
+        if (errors.length === 0) void onSave?.(prepared.values);
       }}
     >
       {definition.fields.length === 0 && (
@@ -211,7 +252,8 @@ export function RecordForm({
         <FieldInput
           key={field.id}
           field={field}
-          value={values[field.id]}
+          value={prepared.values[field.id]}
+          candidates={fieldCandidates(definition, field.type)}
           disabled={busy}
           issues={issues}
           onChange={(value) => {
@@ -245,4 +287,20 @@ export function TreeMark() {
       <circle cx="26" cy="14" r="2" fill="currentColor" />
     </svg>
   );
+}
+
+export function displayValue(
+  definition: Definition,
+  field: Field,
+  value: Values[string] | undefined,
+): string {
+  if (Array.isArray(value)) {
+    const candidates = fieldCandidates(definition, field.type);
+    return value
+      .map(
+        (id) => candidates.find((candidate) => candidate.id === id)?.name ?? id,
+      )
+      .join("、");
+  }
+  return String(value ?? "");
 }

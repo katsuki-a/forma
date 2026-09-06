@@ -1,8 +1,13 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { AppError, valuesSchema } from "../contracts/model.ts";
-import { createService } from "../domain/service.ts";
+import {
+  AppError,
+  valuesSchema,
+  announcementInputSchema,
+  workflowInputSchema,
+} from "../contracts/model.ts";
 import type { Repository } from "../domain/repository.ts";
+import { createService } from "../domain/service.ts";
 
 const revisionSchema = z.number().int().nonnegative();
 const draftInput = z.strictObject({
@@ -87,6 +92,35 @@ export function createApi(repository: Repository, actor = "local-user") {
         issues: [],
       },
       500,
+    );
+  });
+  api.get("/api/announcements", async (c) =>
+    c.json(await service.listAnnouncements()),
+  );
+  api.post("/api/announcements", async (c) =>
+    c.json(
+      await service.saveAnnouncement(
+        announcementInputSchema.parse(await c.req.json()),
+      ),
+      201,
+    ),
+  );
+  api.delete("/api/announcements/:id", async (c) => {
+    const body = publishInput.parse(await c.req.json());
+    await service.deleteAnnouncement(c.req.param("id"), body.revision);
+    return c.json({ ok: true });
+  });
+  api.post("/api/apps/:id/records/:recordId/workflow", async (c) => {
+    const body = z
+      .strictObject({ revision: revisionSchema, ...workflowInputSchema.shape })
+      .parse(await c.req.json());
+    return c.json(
+      await service.updateWorkflow(
+        c.req.param("id"),
+        body.revision,
+        c.req.param("recordId"),
+        body,
+      ),
     );
   });
   api.get("/api/apps", async (c) => c.json(await service.list()));

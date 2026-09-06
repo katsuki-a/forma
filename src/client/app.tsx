@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-import { AppError, emptyDefinition, templates } from "../contracts/model.ts";
 import type {
   Application,
   AppRecord,
   Definition,
   Values,
+  WorkflowInput,
 } from "../contracts/model.ts";
-import { createClient } from "./api-client.ts";
+import { AppError, emptyDefinition, templates } from "../contracts/model.ts";
 import type { ApiClient } from "./api-client.ts";
-import { Button, RecordForm, TreeMark } from "./components.tsx";
+import { createClient } from "./api-client.ts";
+import { Announcements } from "./announcements.tsx";
+import { WorkflowControl } from "./workflow-control.tsx";
+import { Button, RecordForm, TreeMark, displayValue } from "./components.tsx";
 import { Editor } from "./editor.tsx";
 import "../../design/components.css";
 
@@ -56,6 +59,12 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
     (view.kind === "edit"
       ? current.draft
       : (current.published ?? current.draft));
+  const editorDefinition =
+    view.kind === "create"
+      ? view.definition
+      : view.kind === "edit"
+        ? current?.draft
+        : undefined;
   const navigate = (next: View) => {
     setView(next);
     setError(null);
@@ -97,6 +106,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
         <ul className="tree">
           <li>
             <button
+              type="button"
               disabled={busy}
               aria-current={view.kind === "portal" ? "page" : undefined}
               onClick={() => navigate({ kind: "portal" })}
@@ -107,6 +117,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
           {apps.map((app) => (
             <li key={app.id}>
               <button
+                type="button"
                 disabled={busy}
                 aria-current={current?.id === app.id ? "page" : undefined}
                 onClick={() => navigate({ kind: "records", id: app.id })}
@@ -205,6 +216,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                       <li className="app-row" key={app.id}>
                         <div>
                           <button
+                            type="button"
                             className="text-button"
                             disabled={busy}
                             onClick={() =>
@@ -246,16 +258,17 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                 </Button>
               </div>
             )}
+            <Announcements client={client} />
           </>
         )}
-        {(view.kind === "create" || (view.kind === "edit" && current)) && (
+        {editorDefinition && (
           <Editor
             key={
               view.kind === "create"
                 ? "new"
-                : `${current!.id}-${current!.revision}`
+                : `${current?.id}-${current?.revision}`
             }
-            initial={view.kind === "create" ? view.definition : current!.draft}
+            initial={editorDefinition}
             existing={view.kind === "edit"}
             busy={busy}
             onCancel={() =>
@@ -316,6 +329,19 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                 setMessage("記録を保存しました。");
               })
             }
+            onWorkflow={(recordId, input) =>
+              run(async () => {
+                update(
+                  await client.updateWorkflow(
+                    current.id,
+                    current.revision,
+                    recordId,
+                    input,
+                  ),
+                );
+                setMessage("状態と担当者を保存しました。");
+              })
+            }
             onDelete={(ids) =>
               run(async () => {
                 update(
@@ -337,6 +363,7 @@ function Records({
   onCopy,
   onSave,
   onDelete,
+  onWorkflow,
 }: {
   app: Application;
   busy: boolean;
@@ -344,12 +371,14 @@ function Records({
   onCopy: () => void;
   onSave: (values: Values, id?: string) => Promise<void>;
   onDelete: (ids: string[]) => Promise<void>;
+  onWorkflow: (recordId: string, input: WorkflowInput) => Promise<void>;
 }) {
   const [editing, setEditing] = useState<AppRecord | "new" | null>(null);
   const [initial, setInitial] = useState<Values>({});
   const [selected, setSelected] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const definition = app.published ?? app.draft;
+
   return (
     <>
       <header className="header">
@@ -412,6 +441,12 @@ function Records({
                         {field.label}
                       </th>
                     ))}
+                    {definition.workflow && (
+                      <>
+                        <th scope="col">状態</th>
+                        <th scope="col">担当者</th>
+                      </>
+                    )}
                     <th scope="col">操作</th>
                   </tr>
                 </thead>
@@ -438,14 +473,32 @@ function Records({
                         <td
                           key={field.id}
                           className={
-                            field.type === "number" ? "number" : undefined
+                            ["number", "calculation"].includes(field.type)
+                              ? "number"
+                              : undefined
                           }
                         >
-                          {Array.isArray(record.values[field.id])
-                            ? (record.values[field.id] as string[]).join("、")
-                            : String(record.values[field.id] ?? "")}
+                          {displayValue(
+                            definition,
+                            field,
+                            record.values[field.id],
+                          )}
                         </td>
                       ))}
+                      {definition.workflow && (
+                        <>
+                          <td>
+                            {definition.workflow.states.find(
+                              (state) => state.id === record.workflow?.stateId,
+                            )?.name ?? "未設定"}
+                          </td>
+                          <td>
+                            {definition.directory?.users.find(
+                              (user) => user.id === record.workflow?.assigneeId,
+                            )?.name ?? "未指定"}
+                          </td>
+                        </>
+                      )}
                       <td>
                         <div className="button-row">
                           <Button
@@ -546,6 +599,14 @@ function Records({
                   <dt>更新日時</dt>
                   <dd>{editing.updatedAt}</dd>
                 </dl>
+              )}
+              {editing !== "new" && (
+                <WorkflowControl
+                  definition={definition}
+                  record={editing}
+                  busy={busy}
+                  onChange={(input) => onWorkflow(editing.id, input)}
+                />
               )}
               <RecordForm
                 key={`${editing === "new" ? "new" : editing.id}-${JSON.stringify(initial)}`}

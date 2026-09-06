@@ -1,9 +1,12 @@
+import type { Application, Values, WorkflowInput } from "../contracts/model.ts";
 import {
   AppError,
   parseDefinition,
-  validateValues,
+  prepareValues,
+  uniqueIssues,
 } from "../contracts/model.ts";
-import type { Application, Values } from "../contracts/model.ts";
+import { changeWorkflow, workflowIssues } from "./workflow.ts";
+import { announcementService } from "./announcements.ts";
 import type { Repository } from "./repository.ts";
 
 export function createService(
@@ -31,6 +34,15 @@ export function createService(
         "別の操作で変更されています。最新の内容を読み直してください。",
       );
     update(app);
+    if (app.published) {
+      const issues = uniqueIssues(app.published, app.records);
+      if (issues.length)
+        throw new AppError(
+          "validation",
+          "重複している項目を修正してください。",
+          issues,
+        );
+    }
     app.revision++;
     if (!(await repository.compareAndSwap(app, revision)))
       throw new AppError(
@@ -40,6 +52,7 @@ export function createService(
     return app;
   };
   return {
+    ...announcementService(repository, context),
     list: () => repository.list(),
     get,
     async create(candidate: unknown) {
@@ -64,11 +77,22 @@ export function createService(
       }),
     publish: (id: string, revision: number) =>
       change(id, revision, (app) => {
-        const issues = app.records.flatMap((record) =>
-          validateValues(app.draft, record.values).map((issue) => ({
+        const prepared = app.records.map((record) => ({
+          record,
+          ...prepareValues(app.draft, record.values),
+        }));
+        const issues = prepared.flatMap((item) => [
+          ...item.issues.map((issue) => ({
             ...issue,
-            message: `記録${record.number}: ${issue.message}`,
+            message: `記録${item.record.number}: ${issue.message}`,
           })),
+          ...workflowIssues(app.draft, item.record),
+        ]);
+        issues.push(
+          ...uniqueIssues(
+            app.draft,
+            prepared.map((item) => ({ ...item.record, values: item.values })),
+          ),
         );
         if (issues.length)
           throw new AppError(
@@ -77,6 +101,14 @@ export function createService(
             issues,
           );
         app.published = structuredClone(app.draft);
+        for (const item of prepared) {
+          item.record.values = item.values;
+          if (!item.record.workflow && app.draft.workflow)
+            item.record.workflow = {
+              stateId: app.draft.workflow.initialState,
+              assigneeId: null,
+            };
+        }
       }),
     saveRecord: (
       id: string,
@@ -90,7 +122,8 @@ export function createService(
             "not_published",
             "先にアプリの変更を反映してください。",
           );
-        const issues = validateValues(app.published, values);
+        const prepared = prepareValues(app.published, values);
+        const issues = prepared.issues;
         if (issues.length)
           throw new AppError(
             "validation",
@@ -107,7 +140,7 @@ export function createService(
           );
         if (existing)
           Object.assign(existing, {
-            values: structuredClone(values),
+            values: prepared.values,
             updatedAt: context.now(),
             updatedBy: context.actor,
           });
@@ -115,12 +148,33 @@ export function createService(
           app.records.push({
             id: context.id(),
             number: app.nextNumber++,
-            values: structuredClone(values),
+            values: prepared.values,
+            workflow: app.published.workflow
+              ? {
+                  stateId: app.published.workflow.initialState,
+                  assigneeId: null,
+                }
+              : undefined,
             createdAt: context.now(),
             updatedAt: context.now(),
             createdBy: context.actor,
             updatedBy: context.actor,
           });
+      }),
+    updateWorkflow: (
+      id: string,
+      revision: number,
+      recordId: string,
+      input: WorkflowInput,
+    ) =>
+      change(id, revision, (app) => {
+        if (!app.published)
+          throw new AppError("not_published", "先にアプリを反映してください。");
+        const record = app.records.find((record) => record.id === recordId);
+        if (!record) throw new AppError("not_found", "記録が見つかりません。");
+        changeWorkflow(app.published, record, input);
+        record.updatedAt = context.now();
+        record.updatedBy = context.actor;
       }),
     deleteRecords: (id: string, revision: number, ids: string[]) =>
       change(id, revision, (app) => {

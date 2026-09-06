@@ -16,6 +16,17 @@ CREATE TABLE records (
   updated_at TEXT NOT NULL,
   created_by TEXT NOT NULL,
   updated_by TEXT NOT NULL,
+  state_id TEXT,
+  assignee_id TEXT CHECK (state_id IS NOT NULL OR assignee_id IS NULL),
   PRIMARY KEY (app_id, id),
   UNIQUE (app_id, number)
+);
+
+CREATE TABLE announcements (
+  id TEXT PRIMARY KEY NOT NULL,
+  revision INTEGER NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0),
+  title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );

@@ -1,13 +1,14 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Application } from "../contracts/model.ts";
 import { appSchema, valuesSchema } from "../contracts/model.ts";
+import { d1Announcements } from "./d1-announcements.ts";
 import type { Repository } from "../domain/repository.ts";
 
 // 単一SELECTのスナップショットで定義と記録を読み、異なるリビジョンの混在を防ぐ。
 const selectApplications = `
   SELECT a.id, a.revision, a.next_number, a.draft_json, a.published_json,
     r.id AS record_id, r.number, r.values_json,
-    r.created_at, r.updated_at, r.created_by, r.updated_by
+    r.created_at, r.updated_at, r.created_by, r.updated_by, r.state_id, r.assignee_id
   FROM applications AS a
   LEFT JOIN records AS r ON r.app_id = a.id`;
 
@@ -17,6 +18,8 @@ type ApplicationRow = {
   next_number: number;
   draft_json: string;
   published_json: string | null;
+  state_id: string | null;
+  assignee_id: string | null;
   record_id: string | null;
   number: number | null;
   values_json: string | null;
@@ -47,6 +50,10 @@ function assemble(rows: ApplicationRow[]): Application[] {
     if (row.record_id !== null) {
       app.records.push({
         id: row.record_id,
+        workflow:
+          row.state_id === null
+            ? undefined
+            : { stateId: row.state_id, assigneeId: row.assignee_id },
         number: row.number as number,
         values: valuesSchema.parse(JSON.parse(row.values_json as string)),
         createdAt: row.created_at as string,
@@ -61,6 +68,7 @@ function assemble(rows: ApplicationRow[]): Application[] {
 
 export function d1Repository(database: D1Database): Repository {
   return {
+    ...d1Announcements(database),
     async list() {
       const { results } = await database
         .prepare(`${selectApplications} ORDER BY a.rowid, r.number`)
@@ -132,19 +140,22 @@ export function d1Repository(database: D1Database): Repository {
         database
           .prepare(
             `
-          INSERT INTO records (app_id, id, number, values_json, created_at, updated_at, created_by, updated_by)
+          INSERT INTO records (app_id, id, number, values_json, created_at, updated_at, created_by, updated_by, state_id, assignee_id)
           SELECT ?, json_extract(value, '$.id'), json_extract(value, '$.number'),
             json_extract(value, '$.values'), json_extract(value, '$.createdAt'),
-            json_extract(value, '$.updatedAt'), json_extract(value, '$.createdBy'), json_extract(value, '$.updatedBy')
+            json_extract(value, '$.updatedAt'), json_extract(value, '$.createdBy'), json_extract(value, '$.updatedBy'),
+            json_extract(value, '$.workflow.stateId'), json_extract(value, '$.workflow.assigneeId')
           FROM json_each(?)
           WHERE EXISTS (SELECT 1 FROM applications WHERE id = ? AND write_token = ?)
           ON CONFLICT(app_id, id) DO UPDATE SET
             number = excluded.number, values_json = excluded.values_json,
             created_at = excluded.created_at, updated_at = excluded.updated_at,
-            created_by = excluded.created_by, updated_by = excluded.updated_by
+            created_by = excluded.created_by, updated_by = excluded.updated_by,
+            state_id = excluded.state_id, assignee_id = excluded.assignee_id
           WHERE records.number IS NOT excluded.number OR records.values_json IS NOT excluded.values_json
             OR records.created_at IS NOT excluded.created_at OR records.updated_at IS NOT excluded.updated_at
             OR records.created_by IS NOT excluded.created_by OR records.updated_by IS NOT excluded.updated_by
+            OR records.state_id IS NOT excluded.state_id OR records.assignee_id IS NOT excluded.assignee_id
         `,
           )
           .bind(app.id, records, app.id, token),

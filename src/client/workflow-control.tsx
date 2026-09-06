@@ -1,0 +1,73 @@
+import { useState } from "react";
+import type {
+  AppRecord,
+  Definition,
+  WorkflowInput,
+} from "../contracts/model.ts";
+import { Button, FormField } from "./components.tsx";
+
+export function WorkflowControl({
+  definition,
+  record,
+  busy,
+  onChange,
+}: {
+  definition: Definition;
+  record: AppRecord;
+  busy: boolean;
+  onChange: (input: WorkflowInput) => Promise<void>;
+}) {
+  const [assignee, setAssignee] = useState(record.workflow?.assigneeId ?? "");
+  const state = definition.workflow?.states.find(
+    (state) => state.id === record.workflow?.stateId,
+  );
+  if (!state) return null;
+  return (
+    <section className="section" aria-label="状態と担当者">
+      <h3>状態と担当者</h3>
+      <p>現在の状態：{state.name}</p>
+      <FormField label="担当者">
+        {(id) => (
+          <select
+            id={id}
+            disabled={busy}
+            value={assignee}
+            onChange={(event) => setAssignee(event.target.value)}
+          >
+            <option value="">未指定</option>
+            {state.assignees.map((userId) => (
+              <option key={userId} value={userId}>
+                {definition.directory?.users.find((user) => user.id === userId)
+                  ?.name ?? userId}
+              </option>
+            ))}
+          </select>
+        )}
+      </FormField>
+      <div className="button-row">
+        <Button
+          kind="secondary"
+          disabled={busy}
+          onClick={() => {
+            void onChange({ assigneeId: assignee || null });
+          }}
+        >
+          担当者を保存
+        </Button>
+        {definition.workflow?.transitions
+          .filter((item) => item.from === state.id)
+          .map((transition) => (
+            <Button
+              key={transition.id}
+              disabled={busy}
+              onClick={() => {
+                void onChange({ transitionId: transition.id });
+              }}
+            >
+              {transition.name}
+            </Button>
+          ))}
+      </div>
+    </section>
+  );
+}

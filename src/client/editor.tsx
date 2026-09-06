@@ -1,10 +1,12 @@
 import { useState } from "react";
+import type { Definition, Field, FieldType } from "../contracts/model.ts";
 import {
   definitionSchema,
   fieldLabels,
   fieldTypes,
+  uniqueFieldTypes,
 } from "../contracts/model.ts";
-import type { Definition, Field, FieldType } from "../contracts/model.ts";
+import { DirectorySettings, WorkflowSettings } from "./definition-settings.tsx";
 import { Button, FormField, RecordForm } from "./components.tsx";
 
 export function Editor({
@@ -197,6 +199,13 @@ export function Editor({
                             const type = event.target.value as FieldType;
                             updateField(field.id, {
                               type,
+                              unique: uniqueFieldTypes.includes(type)
+                                ? field.unique
+                                : undefined,
+                              formula:
+                                type === "calculation"
+                                  ? (field.formula ?? "")
+                                  : undefined,
                               options: [
                                 "radio",
                                 "select",
@@ -238,6 +247,59 @@ export function Editor({
                       )}
                     </FormField>
                   )}
+                  {uniqueFieldTypes.includes(field.type) && (
+                    <label className="choice">
+                      <input
+                        type="checkbox"
+                        aria-label={`${field.label}の重複を禁止する`}
+                        checked={field.unique ?? false}
+                        onChange={(event) =>
+                          updateField(field.id, {
+                            unique: event.target.checked,
+                          })
+                        }
+                      />
+                      値の重複を禁止する
+                    </label>
+                  )}
+                  {field.type === "calculation" && (
+                    <div className="field">
+                      <FormField
+                        label={`項目${index + 1}の計算式`}
+                        hint="数値項目を挿入し、+ − * / と括弧で計算します。未入力を含む式の結果は空になります。"
+                      >
+                        {(id) => (
+                          <input
+                            id={id}
+                            value={field.formula ?? ""}
+                            onChange={(event) =>
+                              updateField(field.id, {
+                                formula: event.target.value,
+                              })
+                            }
+                          />
+                        )}
+                      </FormField>
+                      <div className="button-row">
+                        {definition.fields
+                          .filter((item) => item.type === "number")
+                          .map((item) => (
+                            <Button
+                              key={item.id}
+                              kind="secondary"
+                              aria-label={`${field.label}の式に${item.label}を挿入`}
+                              onClick={() =>
+                                updateField(field.id, {
+                                  formula: `${field.formula ?? ""}[${item.id}]`,
+                                })
+                              }
+                            >
+                              {item.label}を挿入
+                            </Button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="button-row">
                     <Button
                       kind="secondary"
@@ -273,6 +335,14 @@ export function Editor({
               ))}
             </ol>
           </section>
+          <DirectorySettings
+            value={definition.directory}
+            onChange={(directory) => update({ directory })}
+          />
+          <WorkflowSettings
+            definition={definition}
+            onChange={(workflow) => update({ workflow })}
+          />
           {errors.length > 0 && (
             <div role="alert" className="error">
               {errors.map((error, i) => (

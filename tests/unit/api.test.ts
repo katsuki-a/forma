@@ -92,3 +92,39 @@ test("不正Originを内部エラーにせず拒否する", async () => {
   });
   expect(response.status).toBe(403);
 });
+
+test("FRM-017/018 状態とお知らせをHTTP契約経由で操作する", async () => {
+  const { client, api } = setup();
+  const { capabilityDefinition } = await import("../fixtures/capabilities.ts");
+  let app = await client.create(capabilityDefinition);
+  app = await client.publish(app.id, app.revision);
+  app = await client.saveRecord(app.id, app.revision, {
+    title: "HTTP",
+    quantity: 2,
+    price: 100,
+  });
+  app = await client.updateWorkflow(app.id, app.revision, app.records[0].id, {
+    transitionId: "complete",
+  });
+  expect(app.records[0].workflow?.stateId).toBe("done");
+  expect(app.records[0].values.total).toBe(200);
+  const news = await client.saveAnnouncement({
+    title: "集合",
+    body: "10時\n玄関",
+  });
+  expect(await client.listAnnouncements()).toEqual([news]);
+  expect(
+    (
+      await api.request(
+        `/api/apps/${app.id}/records/${app.records[0].id}/workflow`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ revision: app.revision, stateId: "todo" }),
+        },
+      )
+    ).status,
+  ).toBe(400);
+  await client.deleteAnnouncement(news.id, news.revision);
+  expect(await client.listAnnouncements()).toEqual([]);
+});
