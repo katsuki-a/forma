@@ -23,7 +23,7 @@ Node.js 22.14以上の22系とnpmを使います。Cloudflareへのログイン�
 
 ```sh
 npm ci
-npm run db:migrate
+npm run db:init
 npm run dev
 ```
 
@@ -71,6 +71,8 @@ server（Hono） ─────────────┘
 ```
 
 FEはReact＋Vite、BEはHono＋Workersです。通信契約を共有し、FEからサーバー実装を参照しません。手動編集・テンプレート・将来の生成候補は同じ定義と検証を通ります。AIの生成サービスやSDKは未導入です。構成の判断と制約は[ADR-005](adr/0005-local-runtime-and-tests.md)にまとめています。
+
+D1はアプリと記録を別テーブルに保存し、所属・番号の制約と索引を持ちます。可変の定義・入力値にはJSONを使い、未変更の記録は書き直しません。開発段階では旧DBの移行を行わず、`npm run db:init`で新規DBを作ります。既存DBへは実行せず、スキーマ変更後は開発サーバーを停止して`.wrangler/`を退避し、新規DBで起動してください。この変更で検索・ページングは追加しておらず、APIは引き続きアプリ全体を読み出します。[設計と限界](adr/0007-development-workflow.md)を参照してください。
 
 ## ドキュメント
 

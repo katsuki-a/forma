@@ -10,6 +10,10 @@
 
 - [ADR-005: ローカルD1とDB非依存の検証](0005-local-runtime-and-tests.md) — accepted
 
+- [ADR-006: 記録の分離とコード品質の検査](0006-storage-and-code-quality.md) — superseded
+
+- [ADR-007: 開発時の初期化と標準ツール](0007-development-workflow.md) — accepted
+
 ## 記録形式
 
 ファイル名は `NNNN-topic.md`、先頭のメタデータは `id: ADR-NNN`、`status:`、`date: YYYY-MM-DD` です。状態は `proposed` / `accepted` / `rejected` / `superseded` を使います。

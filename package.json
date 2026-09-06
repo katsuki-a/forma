@@ -34,7 +34,7 @@
     "lint:fix": "eslint . --fix --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:migrate": "wrangler d1 migrations apply forma-local --local"
+    "db:init": "wrangler d1 execute forma-local --local --file=db/schema.sql"
   },
   "devDependencies": {
     "@babel/parser": "7.29.8",

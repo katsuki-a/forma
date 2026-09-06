@@ -1,12 +1,12 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "vitest";
-import { Miniflare } from "miniflare";
-import type { D1Database } from "@cloudflare/workers-types";
-import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { templates } from "../../src/contracts/model.ts";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { d1Repository } from "../../src/server/d1-repository.ts";
+import type { D1Database } from "@cloudflare/workers-types";
+import { Miniflare } from "miniflare";
+import { afterAll, beforeAll, beforeEach, expect, test } from "vitest";
 import { createService } from "../../src/domain/service.ts";
-import { templates } from "../../src/contracts/model.ts";
+import { d1Repository } from "../../src/server/d1-repository.ts";
 import { repositoryContract } from "../repository-contract.ts";
 
 const persistence = mkdtempSync(join(tmpdir(), "forma-storage-test-"));
@@ -40,12 +40,14 @@ let database: D1Database;
 beforeAll(async () => {
   runtime = createRuntime();
   database = await runtime.getD1Database("DB");
-  await database.exec(
-    readFileSync(
-      new URL("../../migrations/0001-applications.sql", import.meta.url),
-      "utf8",
-    ).replaceAll("\n", " "),
-  );
+  const statements = readFileSync(
+    new URL("../../db/schema.sql", import.meta.url),
+    "utf8",
+  )
+    .split(";")
+    .map((sql) => sql.trim())
+    .filter(Boolean);
+  await database.batch(statements.map((sql) => database.prepare(sql)));
 });
 beforeEach(async () => {
   await database.prepare("DELETE FROM applications").run();
