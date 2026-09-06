@@ -1,99 +1,305 @@
 <!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>forma — デザインシステムの部品見本</title>
-  <link rel="stylesheet" href="components.css">
-</head>
-<body>
-<div class="shell">
-  <nav class="nav" aria-label="部品見本の構造">
-    <div class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 29V5M16 19L6 12M16 13L25 6M16 25L26 18"/><circle cx="16" cy="4" r="2"/><circle cx="5" cy="11" r="2"/><circle cx="26" cy="5" r="2"/><circle cx="27" cy="17" r="2"/></svg>forma</div>
-    <p class="nav-title">情報のかたち</p>
-    <ul class="tree">
-      <li><a href="#portal" aria-current="page">アプリの入口</a></li>
-      <li><details open><summary>暮らしの記録</summary><ul><li><a href="#fields">品名</a></li><li><a href="#fields">担当者</a></li><li><a href="#records">状態</a></li></ul></details></li>
-      <li><a href="#work">制作の進み具合</a></li>
-      <li><a href="#palette">色と部品</a></li>
-    </ul>
-    <p class="nav-note">家族にも、仕事の仲間にも。<br>一つずつ、分かるかたちに。</p>
-  </nav>
-  <main class="main">
-    <header class="header" id="portal">
-      <div><h1>みんなで使うアプリ</h1><p class="subtle">暮らしや仕事の情報を、自分たちのかたちで整理する。</p></div>
-      <a class="button" href="#fields">作成部品を見る</a>
-    </header>
-    <div class="notice"><strong>デザインシステム 0.1</strong><p>架空のデータを使った部品見本です。アプリ本体ではなく、情報は保存されません。</p></div>
-    <section aria-labelledby="apps-heading">
-      <div class="section-heading"><h2 id="apps-heading">共有する情報</h2><span class="caption subtle">同じ部品で、違う使い方</span></div>
-      <div class="surface"><ul class="app-list">
-        <li class="app-row"><div><a href="#records">暮らしの記録</a><p class="subtle">買い足すものと、家でやることをまとめる。</p></div><div><span class="status">家族で共有</span></div></li>
-        <li class="app-row"><div><a href="#work">制作の進み具合</a><p class="subtle">作るもの、担当者、今の状態をそろえる。</p></div><div><span class="status">仲間で共有</span></div></li>
-      </ul></div>
-    </section>
-    <section class="section" aria-labelledby="record-heading" id="records">
-      <div class="section-heading"><h2 id="record-heading">暮らしの記録</h2><span class="status">利用中の定義</span></div>
-      <div class="table-wrap" tabindex="0" role="region" aria-label="暮らしの記録の見本。必要に応じて横にスクロールできます">
-        <table><caption>家でやること</caption><thead><tr><th scope="col">記録</th><th scope="col">担当者</th><th scope="col">状態</th><th scope="col" class="number">数量</th></tr></thead><tbody>
-          <tr><td>玄関の電球を買い足す</td><td>あおい</td><td><span class="status">未着手</span></td><td class="number">2</td></tr>
-          <tr><td>本棚の本を整理する</td><td>はる</td><td><span class="status">進行中</span></td><td class="number">12</td></tr>
-          <tr><td>庭の鉢を植え替える</td><td>あおい</td><td><span class="status">完了</span></td><td class="number">3</td></tr>
-        </tbody></table>
-      </div>
-    </section>
-    <section class="section" aria-labelledby="fields-heading" id="fields">
-      <div class="section-heading"><h2 id="fields-heading">項目を整える</h2><span class="status">下書きの見本</span></div>
-      <div class="sample-grid">
-        <form class="surface" id="sample-form">
-          <div class="field"><label for="field-name">項目名</label><input id="field-name" value="品名" aria-describedby="name-help"><span id="name-help" class="caption subtle">みんなが分かる短い名前にします。</span></div>
-          <div class="field"><label for="field-type">情報の種類</label><select id="field-type"><option>一行テキスト</option><option>数値</option><option>日付</option></select></div>
-          <button class="button" type="submit">下書きの見本を確認</button>
-          <p class="feedback" id="sample-feedback" role="status" aria-live="polite">この操作は画面内の確認だけを行います。</p>
-        </form>
-        <div class="surface">
-          <div class="field"><label for="invalid-name">項目名（エラーの見本）</label><input id="invalid-name" value="品名" aria-invalid="true" aria-describedby="invalid-help"><span id="invalid-help" class="error">この項目名は使われています。別の名前を入力してください。</span></div>
-          <div class="field"><label for="readonly-id">レコード番号（自動設定）</label><input id="readonly-id" value="0012" disabled aria-describedby="id-help"><span id="id-help" class="caption subtle">登録時に自動で設定されます。</span></div>
-          <button type="button" class="button" disabled>変更を反映</button><p class="caption subtle">エラーを解消してから反映します。</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>forma — デザインシステムの部品見本</title>
+    <link rel="stylesheet" href="components.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="nav" aria-label="部品見本の構造">
+        <div class="brand">
+          <svg
+            viewBox="0 0 32 32"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M16 29V5M16 19L6 12M16 13L25 6M16 25L26 18" />
+            <circle cx="16" cy="4" r="2" />
+            <circle cx="5" cy="11" r="2" />
+            <circle cx="26" cy="5" r="2" />
+            <circle cx="27" cy="17" r="2" /></svg
+          >forma
         </div>
-      </div>
-    </section>
-    <section class="section" aria-labelledby="work-heading" id="work">
-      <div class="section-heading"><h2 id="work-heading">制作の進み具合</h2><span class="caption subtle">空状態の見本</span></div>
-      <div class="empty"><h3>記録はまだありません</h3><p class="subtle">最初の制作内容と担当者を、ここにまとめられます。</p><a class="button button-secondary" href="#fields">入力部品を見る</a></div>
-    </section>
-    <section class="section" aria-labelledby="palette-heading" id="palette">
-      <h2 id="palette-heading">木から決めた、六つの色</h2><p class="subtle">色の値は共通トークンを参照します。画面ごとには作り直しません。</p>
-      <div class="swatches">
-        <div><div class="swatch swatch-forest"></div><strong>幹</strong><p class="caption">構造と本文</p></div>
-        <div><div class="swatch swatch-leaf"></div><strong>葉</strong><p class="caption">操作と補足</p></div>
-        <div><div class="swatch swatch-moss"></div><strong>輪郭</strong><p class="caption">入力と枝線</p></div>
-        <div><div class="swatch swatch-mist"></div><strong>選択面</strong><p class="caption">現在の位置</p></div>
-        <div><div class="swatch swatch-canvas"></div><strong>背景</strong><p class="caption">全体の作業面</p></div>
-        <div><div class="swatch swatch-surface"></div><strong>作業面</strong><p class="caption">入力と一覧</p></div>
-      </div>
-    </section>
-    <section class="section" aria-labelledby="state-heading"><h2 id="state-heading">操作と状態</h2><p class="subtle">Tabキーでもフォーカスを確認できます。</p><div class="button-row section">
-      <button class="button" data-feedback="主操作の見た目を確認しました。保存は行っていません。">主操作の見本</button>
-      <button class="button button-secondary" data-feedback="補助操作の見た目を確認しました。">補助操作の見本</button>
-      <button class="button button-danger" data-feedback="削除操作の見た目を確認しました。データは削除していません。">削除操作の見本</button>
-      <span class="status-warning status">入力を確認</span><span class="status-error status">保存できません</span>
-    </div><p class="feedback" id="state-feedback" role="status" aria-live="polite"></p></section>
-    <footer>forma · 部品見本 0.1。家庭と仕事の例に同じ部品を使っています。</footer>
-  </main>
-</div>
-<script>
-  document.getElementById('sample-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const input = document.getElementById('field-name');
-    const name = input.value.trim();
-    input.setAttribute('aria-invalid', String(!name));
-    document.getElementById('sample-feedback').textContent = name ? `「${name}」の下書きの見本を確認しました。情報は保存されません。` : '項目名を入力してください。';
-    if (!name) input.focus();
-  });
-  document.querySelectorAll('[data-feedback]').forEach(button => button.addEventListener('click', () => {
-    document.getElementById('state-feedback').textContent = button.dataset.feedback;
-  }));
-</script>
-</body>
+        <p class="nav-title">情報のかたち</p>
+        <ul class="tree">
+          <li><a href="#portal" aria-current="page">アプリの入口</a></li>
+          <li>
+            <details open>
+              <summary>暮らしの記録</summary>
+              <ul>
+                <li><a href="#fields">品名</a></li>
+                <li><a href="#fields">担当者</a></li>
+                <li><a href="#records">状態</a></li>
+              </ul>
+            </details>
+          </li>
+          <li><a href="#work">制作の進み具合</a></li>
+          <li><a href="#palette">色と部品</a></li>
+        </ul>
+        <p class="nav-note">
+          家族にも、仕事の仲間にも。<br />一つずつ、分かるかたちに。
+        </p>
+      </nav>
+      <main class="main">
+        <header class="header" id="portal">
+          <div>
+            <h1>みんなで使うアプリ</h1>
+            <p class="subtle">
+              暮らしや仕事の情報を、自分たちのかたちで整理する。
+            </p>
+          </div>
+          <a class="button" href="#fields">作成部品を見る</a>
+        </header>
+        <div class="notice">
+          <strong>デザインシステム 0.1</strong>
+          <p>
+            架空のデータを使った部品見本です。アプリ本体ではなく、情報は保存されません。
+          </p>
+        </div>
+        <section aria-labelledby="apps-heading">
+          <div class="section-heading">
+            <h2 id="apps-heading">共有する情報</h2>
+            <span class="caption subtle">同じ部品で、違う使い方</span>
+          </div>
+          <div class="surface">
+            <ul class="app-list">
+              <li class="app-row">
+                <div>
+                  <a href="#records">暮らしの記録</a>
+                  <p class="subtle">買い足すものと、家でやることをまとめる。</p>
+                </div>
+                <div><span class="status">家族で共有</span></div>
+              </li>
+              <li class="app-row">
+                <div>
+                  <a href="#work">制作の進み具合</a>
+                  <p class="subtle">作るもの、担当者、今の状態をそろえる。</p>
+                </div>
+                <div><span class="status">仲間で共有</span></div>
+              </li>
+            </ul>
+          </div>
+        </section>
+        <section class="section" aria-labelledby="record-heading" id="records">
+          <div class="section-heading">
+            <h2 id="record-heading">暮らしの記録</h2>
+            <span class="status">利用中の定義</span>
+          </div>
+          <div
+            class="table-wrap"
+            tabindex="0"
+            role="region"
+            aria-label="暮らしの記録の見本。必要に応じて横にスクロールできます"
+          >
+            <table>
+              <caption>
+                家でやること
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">記録</th>
+                  <th scope="col">担当者</th>
+                  <th scope="col">状態</th>
+                  <th scope="col" class="number">数量</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>玄関の電球を買い足す</td>
+                  <td>あおい</td>
+                  <td><span class="status">未着手</span></td>
+                  <td class="number">2</td>
+                </tr>
+                <tr>
+                  <td>本棚の本を整理する</td>
+                  <td>はる</td>
+                  <td><span class="status">進行中</span></td>
+                  <td class="number">12</td>
+                </tr>
+                <tr>
+                  <td>庭の鉢を植え替える</td>
+                  <td>あおい</td>
+                  <td><span class="status">完了</span></td>
+                  <td class="number">3</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="section" aria-labelledby="fields-heading" id="fields">
+          <div class="section-heading">
+            <h2 id="fields-heading">項目を整える</h2>
+            <span class="status">下書きの見本</span>
+          </div>
+          <div class="sample-grid">
+            <form class="surface" id="sample-form">
+              <div class="field">
+                <label for="field-name">項目名</label
+                ><input
+                  id="field-name"
+                  value="品名"
+                  aria-describedby="name-help"
+                /><span id="name-help" class="caption subtle"
+                  >みんなが分かる短い名前にします。</span
+                >
+              </div>
+              <div class="field">
+                <label for="field-type">情報の種類</label
+                ><select id="field-type">
+                  <option>一行テキスト</option>
+                  <option>数値</option>
+                  <option>日付</option>
+                </select>
+              </div>
+              <button class="button" type="submit">下書きの見本を確認</button>
+              <p
+                class="feedback"
+                id="sample-feedback"
+                role="status"
+                aria-live="polite"
+              >
+                この操作は画面内の確認だけを行います。
+              </p>
+            </form>
+            <div class="surface">
+              <div class="field">
+                <label for="invalid-name">項目名（エラーの見本）</label
+                ><input
+                  id="invalid-name"
+                  value="品名"
+                  aria-invalid="true"
+                  aria-describedby="invalid-help"
+                /><span id="invalid-help" class="error"
+                  >この項目名は使われています。別の名前を入力してください。</span
+                >
+              </div>
+              <div class="field">
+                <label for="readonly-id">レコード番号（自動設定）</label
+                ><input
+                  id="readonly-id"
+                  value="0012"
+                  disabled
+                  aria-describedby="id-help"
+                /><span id="id-help" class="caption subtle"
+                  >登録時に自動で設定されます。</span
+                >
+              </div>
+              <button type="button" class="button" disabled>変更を反映</button>
+              <p class="caption subtle">エラーを解消してから反映します。</p>
+            </div>
+          </div>
+        </section>
+        <section class="section" aria-labelledby="work-heading" id="work">
+          <div class="section-heading">
+            <h2 id="work-heading">制作の進み具合</h2>
+            <span class="caption subtle">空状態の見本</span>
+          </div>
+          <div class="empty">
+            <h3>記録はまだありません</h3>
+            <p class="subtle">
+              最初の制作内容と担当者を、ここにまとめられます。
+            </p>
+            <a class="button button-secondary" href="#fields">入力部品を見る</a>
+          </div>
+        </section>
+        <section class="section" aria-labelledby="palette-heading" id="palette">
+          <h2 id="palette-heading">木から決めた、六つの色</h2>
+          <p class="subtle">
+            色の値は共通トークンを参照します。画面ごとには作り直しません。
+          </p>
+          <div class="swatches">
+            <div>
+              <div class="swatch swatch-forest"></div>
+              <strong>幹</strong>
+              <p class="caption">構造と本文</p>
+            </div>
+            <div>
+              <div class="swatch swatch-leaf"></div>
+              <strong>葉</strong>
+              <p class="caption">操作と補足</p>
+            </div>
+            <div>
+              <div class="swatch swatch-moss"></div>
+              <strong>輪郭</strong>
+              <p class="caption">入力と枝線</p>
+            </div>
+            <div>
+              <div class="swatch swatch-mist"></div>
+              <strong>選択面</strong>
+              <p class="caption">現在の位置</p>
+            </div>
+            <div>
+              <div class="swatch swatch-canvas"></div>
+              <strong>背景</strong>
+              <p class="caption">全体の作業面</p>
+            </div>
+            <div>
+              <div class="swatch swatch-surface"></div>
+              <strong>作業面</strong>
+              <p class="caption">入力と一覧</p>
+            </div>
+          </div>
+        </section>
+        <section class="section" aria-labelledby="state-heading">
+          <h2 id="state-heading">操作と状態</h2>
+          <p class="subtle">Tabキーでもフォーカスを確認できます。</p>
+          <div class="button-row section">
+            <button
+              class="button"
+              data-feedback="主操作の見た目を確認しました。保存は行っていません。"
+            >
+              主操作の見本
+            </button>
+            <button
+              class="button button-secondary"
+              data-feedback="補助操作の見た目を確認しました。"
+            >
+              補助操作の見本
+            </button>
+            <button
+              class="button button-danger"
+              data-feedback="削除操作の見た目を確認しました。データは削除していません。"
+            >
+              削除操作の見本
+            </button>
+            <span class="status-warning status">入力を確認</span
+            ><span class="status-error status">保存できません</span>
+          </div>
+          <p
+            class="feedback"
+            id="state-feedback"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+        <footer>
+          forma · 部品見本 0.1。家庭と仕事の例に同じ部品を使っています。
+        </footer>
+      </main>
+    </div>
+    <script>
+      document
+        .getElementById("sample-form")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const input = document.getElementById("field-name");
+          const name = input.value.trim();
+          input.setAttribute("aria-invalid", String(!name));
+          document.getElementById("sample-feedback").textContent = name
+            ? `「${name}」の下書きの見本を確認しました。情報は保存されません。`
+            : "項目名を入力してください。";
+          if (!name) input.focus();
+        });
+      document.querySelectorAll("[data-feedback]").forEach((button) =>
+        button.addEventListener("click", () => {
+          document.getElementById("state-feedback").textContent =
+            button.dataset.feedback;
+        }),
+      );
+    </script>
+  </body>
 </html>

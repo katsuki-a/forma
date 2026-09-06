@@ -41,16 +41,20 @@ npm run check
 npm run check:local
 ```
 
-`check`は外部DBなしで型・文書・非公開情報・デザイン・依存方向、単体/API、実ブラウザーUI、実HTTP E2E、FE/Workerビルドを検証します。`check:local`はこれに非公開intentの承認照合を加えます。公開CIでは非公開資料を使いません。
+`check`は外部DBなしでlint・整形・型・文書・非公開情報・デザイン・依存方向、単体/API、実ブラウザーUI、実HTTP E2E、FE/Workerビルドを検証します。`check:local`はこれに非公開intentの承認照合を加えます。公開CIでは非公開資料を使いません。
 
-| コマンド | 用途 |
-| --- | --- |
-| `npm run test:unit` | ドメイン、通信契約、メモリー保存、依存境界 |
-| `npm run test:ui` | DB・HTTPサーバーなしのChromium UI検証 |
-| `npm run test:e2e` | メモリーAPI＋Viteを起動する広い／狭い画面のHTTP検証 |
-| `npm run test:watch` | 単体テストを変更時に再実行 |
-| `npm run test:storage` | 通常検証と分離したローカルD1保存・同時更新・再起動検証 |
-| `npm run build` | FEのビルドとWorkerのdry-run。デプロイはしない |
+| コマンド               | 用途                                                       |
+| ---------------------- | ---------------------------------------------------------- |
+| `npm run lint`         | ESLint・型付きTypeScript・React Hooksの推奨lint            |
+| `npm run format:check` | Prettierの整形を変更せず検査                               |
+| `npm run format`       | Prettier標準設定でコード・公開文書を整形                   |
+| `npm run lint:fix`     | ESLintが提供する自動修正                                   |
+| `npm run test:unit`    | ドメイン、通信契約、メモリー保存、依存境界                 |
+| `npm run test:ui`      | DB・HTTPサーバーなしのChromium UI検証                      |
+| `npm run test:e2e`     | メモリーAPI＋Viteを起動する広い／狭い画面のHTTP検証        |
+| `npm run test:watch`   | 単体テストを変更時に再実行                                 |
+| `npm run test:storage` | 通常検証と分離したローカルD1保存・制約・原子性・再起動検証 |
+| `npm run build`        | FEのビルドとWorkerのdry-run。デプロイはしない              |
 
 UIテストの失敗画像は`.vitest/`、E2Eの結果・画像・失敗トレースは`test-results/`に出力します。どちらもGit対象外です。テスト時間は環境によって変わります。
 
