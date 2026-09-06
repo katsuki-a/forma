@@ -16,7 +16,7 @@
 | [components.css](components.css) | 部品の外観と状態、画面幅への適応 |
 | [preview.html](preview.html) | 同じCSSを使う部品の見本と確認用操作 |
 
-数値や色はCSSだけで定義する。以下の説明は値のコピーではなく使い方の契約。見本のローカル表示は、リポジトリで `python3 -m http.server 4173 --bind 127.0.0.1 --directory design` を実行し、ブラウザーで `http://127.0.0.1:4173/preview.html` を開く。配信対象をdesignだけに限定する。
+数値や色はCSSだけで定義する。以下の説明は値のコピーではなく使い方の契約。見本の起動手順は [READMEのローカル表示](../README.md#ローカルで画面を確認する) を参照する。配信対象は見本のHTMLと共通CSSに限定する。
 
 ## 配色の役割
 
