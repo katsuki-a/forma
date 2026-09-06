@@ -23,3 +23,8 @@ coverage/
 .idea/
 .vscode/
 *.log
+
+# Automated test reports
+.vitest/
+test-results/
+playwright-report/

@@ -30,7 +30,7 @@ function luminance(hex: string): number {
 const pairs: [string, string, number][] = [
   ['color-text', 'color-canvas', 4.5], ['color-text', 'color-surface', 4.5], ['color-text', 'color-selected', 4.5],
   ['color-text-secondary', 'color-canvas', 4.5], ['color-text-secondary', 'color-surface', 4.5], ['color-text-secondary', 'color-selected', 4.5],
-  ['color-on-dark', 'color-nav', 4.5], ['color-on-dark', 'color-action', 4.5], ['color-on-dark', 'color-action-hover', 4.5],
+  ['color-on-dark', 'color-nav', 4.5], ['color-on-dark', 'palette-leaf', 4.5], ['color-on-dark', 'palette-moss', 4.5], ['color-on-dark', 'color-action', 4.5], ['color-on-dark', 'color-action-hover', 4.5],
   ['color-error', 'color-canvas', 4.5], ['color-error', 'color-surface', 4.5],
   ['color-warning', 'color-canvas', 4.5], ['color-border', 'color-surface', 3],
   ['color-focus', 'color-canvas', 3], ['color-focus', 'color-surface', 3], ['color-focus-on-dark', 'color-nav', 3],

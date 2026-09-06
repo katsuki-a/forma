@@ -8,6 +8,8 @@
 - [SPEC-003: デザインの契約](0003-design-system.md)
 - [SPEC-004: アプリ作成の拡張性](0004-creation-extensibility.md)
 
+- [SPEC-005: 実装境界と検証](0005-testability.md)
+
 ## 記録形式
 
 仕様は `NNNN-topic.md` とし、先頭に `id: SPEC-NNN` と `status: active` のメタデータを置きます。

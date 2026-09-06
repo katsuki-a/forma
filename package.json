@@ -9,18 +9,50 @@
     "node": ">=22.14.0 <23"
   },
   "scripts": {
-    "check": "npm run typecheck && npm run docs:check && npm run check:private && npm run design:check && npm test",
+    "check": "npm run typecheck && npm run docs:check && npm run check:private && npm run design:check && npm run check:boundaries && npm test && npm run build && npm run test:e2e",
     "typecheck": "tsc --noEmit",
     "docs:check": "node --experimental-strip-types scripts/check-docs.ts",
-    "test": "node --experimental-strip-types --test scripts/check-docs.test.ts",
+    "test": "npm run test:docs && vitest run",
     "docs:check:local": "node --experimental-strip-types scripts/check-docs.ts --local",
     "check:local": "npm run check && npm run docs:check:local",
     "check:private": "node --experimental-strip-types scripts/check-private.ts",
     "design:check": "node --experimental-strip-types scripts/check-design.ts",
-    "dev": "node --experimental-strip-types scripts/dev.ts"
+    "dev": "node --experimental-strip-types scripts/dev.ts",
+    "test:docs": "node --experimental-strip-types --test scripts/check-docs.test.ts",
+    "test:unit": "vitest run --project unit",
+    "test:ui": "vitest run --project browser",
+    "test:watch": "vitest --project unit",
+    "dev:api": "wrangler dev --local --ip 127.0.0.1 --port 8787 --var LOCAL_MODE:true",
+    "dev:ui": "vite",
+    "dev:design": "node --experimental-strip-types scripts/design-preview.ts",
+    "db:migrate": "wrangler d1 migrations apply forma-local --local",
+    "build": "vite build && wrangler deploy --dry-run --outdir dist/worker",
+    "check:boundaries": "node --experimental-strip-types scripts/check-boundaries.ts",
+    "test:install": "playwright install chromium",
+    "test:storage": "vitest run --config vitest.storage.config.ts",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@babel/parser": "7.29.8",
+    "@cloudflare/workers-types": "5.20260906.1",
+    "@hono/node-server": "2.1.1",
+    "@playwright/test": "1.63.0",
     "@types/node": "22.20.1",
-    "typescript": "7.0.2"
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitest/browser-playwright": "5.0.0",
+    "miniflare": "5.20260903.0-alpha",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "5.0.0",
+    "vitest-browser-react": "2.3.0",
+    "wrangler": "4.129.0"
+  },
+  "dependencies": {
+    "hono": "4.13.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
   }
 }

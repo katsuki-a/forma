@@ -92,3 +92,28 @@ footer { margin-top: var(--space-7); padding-top: var(--space-5); border-top: va
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* アプリ本体も同じ定義元と状態を使う。 */
+textarea { font: inherit; resize: vertical; }
+.field textarea { width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-control); color: var(--color-text); background: var(--color-surface); }
+.editor-fields { padding: 0; border: 0; margin: 0; min-width: 0; }
+.field-list { list-style: none; padding: 0 0 0 var(--tree-indent); margin: 0; border-left: var(--border-width) solid var(--color-border); display: grid; gap: var(--space-4); }
+.field-editor { position: relative; }
+.field-editor::before { content: ''; position: absolute; top: var(--space-6); left: calc(-1 * var(--tree-indent)); width: var(--tree-indent); border-top: var(--border-width) solid var(--color-border); }
+.drag-handle { cursor: grab; font-size: var(--font-small); color: var(--color-text-secondary); }
+.tree button { display: block; width: 100%; text-align: left; padding: var(--space-3) var(--space-2); min-height: var(--control-height); color: inherit; border: 0; border-radius: var(--radius-control); background: transparent; cursor: pointer; }
+.tree button[aria-current='page'] { background: var(--color-selected); color: var(--color-text); font-weight: var(--weight-emphasis); }
+.tree button:hover { text-decoration: underline; }
+.tree-label { padding: var(--space-3) var(--space-2); overflow-wrap: anywhere; }
+.text-button { color: var(--color-action); background: transparent; border: 0; padding: 0; text-align: left; text-decoration: underline; cursor: pointer; font-weight: var(--weight-emphasis); }
+.record-form { max-width: var(--form-max); }
+.choice-field { border: 0; margin: 0 0 var(--space-5); padding: 0; }
+.choice-field legend { font-size: var(--font-label); font-weight: var(--weight-emphasis); margin-bottom: var(--space-2); }
+.choice { display: flex; align-items: center; gap: var(--space-2); min-height: var(--control-height); }
+.record-meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); font-size: var(--font-small); margin-bottom: var(--space-5); }
+.record-meta dd { margin: 0; overflow-wrap: anywhere; }
+[data-theme='leaf'] .nav { background: var(--palette-leaf); }
+[data-theme='moss'] .nav { background: var(--palette-moss); }
+th, td, .app-row, h1 { overflow-wrap: anywhere; }
+
+.table-wrap table { min-width: var(--table-min); }

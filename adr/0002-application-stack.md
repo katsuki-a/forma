@@ -1,6 +1,6 @@
 ---
 id: ADR-002
-status: proposed
+status: accepted
 date: 2026-09-06
 ---
 
@@ -8,9 +8,9 @@ date: 2026-09-06
 
 ## 確定している制約
 
-TypeScriptとCloudflare Workersを使う。INT-001（非公開intent） に基づく。以下のフレームワーク構成は提案であり、未実装。
+TypeScriptとCloudflare Workersを使う。INT-001（非公開intent） に基づく。以下は当初の提案。2026-09-06のINT-005によりHono＋Reactの先行実装が承認された。実装の境界・ローカルDB・検証構成は[ADR-005](0005-local-runtime-and-tests.md)を参照する。
 
-## 提案
+## 当初の提案
 
 HonoをAPIに、React + ViteをUIに使い、Cloudflare Vite pluginでWorkersとフロントエンドを開発・ビルドする。初期候補はReact SPAと同一オリジンのAPIを一つのWorkerで配信する構成。
 
@@ -28,7 +28,7 @@ HonoはWeb標準のRequest/Responseを中心に扱い、Workers向けの公式�
 
 ## 採択・見直しの条件
 
-PdMによる構成の採択後、最小のUI/API疎通とWorkersでのビルドを確認する。SSRの必要性、データの永続化、認証要件が構成に影響すると判明したら再検討する。
+採択された構成について、最小のUI/API疎通とWorkersでのビルドを確認する。SSRの必要性、データの永続化、認証要件が構成に影響すると判明したら再検討する。
 
 ## 一次情報
 

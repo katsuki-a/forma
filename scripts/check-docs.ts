@@ -106,7 +106,7 @@ export function checkDocuments(input: Map<string, string>, options: { local?: bo
 function readRepository(root: string, local: boolean, dir = ''): Map<string, string> {
   const files = new Map<string, string>();
   for (const entry of readdirSync(resolve(root, dir), { withFileTypes: true })) {
-    if (['.git', 'node_modules', 'dist', 'coverage', '.wrangler'].includes(entry.name)) continue;
+    if (['.git', 'node_modules', 'dist', 'coverage', '.wrangler', '.vitest', 'test-results', 'playwright-report'].includes(entry.name)) continue;
     const path = posix.join(dir, entry.name);
     if (path === 'docs' && !local) continue;
     if (entry.isDirectory()) {

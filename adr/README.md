@@ -3,10 +3,12 @@
 過去の判断と、その時点で確認できた事実を保存します。現行の製品契約は [spec](../spec/README.md) を参照してください。
 
 - [ADR-001: ドキュメントの責務を分ける](0001-document-harness.md) — accepted
-- [ADR-002: アプリケーションの技術構成](0002-application-stack.md) — proposed
+- [ADR-002: アプリケーションの技術構成](0002-application-stack.md) — accepted
 
 - [ADR-003: アプリ定義を作成経路から独立させる](0003-schema-authoring-boundary.md) — proposed
 - [ADR-004: 木を情報の構造として表す](0004-tree-design-system.md) — proposed
+
+- [ADR-005: ローカルD1とDB非依存の検証](0005-local-runtime-and-tests.md) — accepted
 
 ## 記録形式
 
