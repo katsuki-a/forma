@@ -1,0 +1,24 @@
+{
+  "name": "forma",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Define data schemas and turn them into shared applications.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "scripts": {
+    "check": "npm run typecheck && npm run docs:check && npm run check:private && npm test",
+    "typecheck": "tsc --noEmit",
+    "docs:check": "node --experimental-strip-types scripts/check-docs.ts",
+    "test": "node --experimental-strip-types --test scripts/check-docs.test.ts",
+    "docs:check:local": "node --experimental-strip-types scripts/check-docs.ts --local",
+    "check:local": "npm run check && npm run docs:check:local",
+    "check:private": "node --experimental-strip-types scripts/check-private.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "7.0.2"
+  }
+}

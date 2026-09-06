@@ -1,0 +1,25 @@
+# Private PdM intent and feature selection (local only)
+/docs/
+
+# Dependencies and build outputs
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/
+*.pem
+*.key
+
+# Local editor and OS state
+.DS_Store
+.idea/
+.vscode/
+*.log
