@@ -115,7 +115,7 @@ test("FRM-040 通信失敗で入力を失わず再試行できる", async () => 
   await expect
     .element(
       page.getByText(
-        "接続できません。入力を残したまま、もう一度お試しください。",
+        "接続できません。入力内容は残っています。もう一度お試しください。",
         { exact: true },
       ),
     )
@@ -134,6 +134,6 @@ test("FRM-040 サーバー実装なしで空状態と障害表示を検証でき
     <App client={createClient(() => Promise.resolve(Response.json([])))} />,
   );
   await expect
-    .element(page.getByRole("heading", { name: "最初のアプリを作りましょう" }))
+    .element(page.getByRole("heading", { name: "アプリはまだありません" }))
     .toBeVisible();
 });

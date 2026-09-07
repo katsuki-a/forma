@@ -1,3 +1,4 @@
+import { describe, translator } from "../localization/index.ts";
 import { z } from "zod";
 import type {
   Definition,
@@ -32,39 +33,30 @@ export function createClient(
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch {
-      throw new AppError(
-        "network",
-        "接続できません。入力を残したまま、もう一度お試しください。",
-      );
+      throw new AppError("network", describe("errors.network"));
     }
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
-      throw new AppError(
-        "protocol",
-        "応答を読み取れません。接続先を確認してください。",
-      );
+      throw new AppError("protocol", describe("errors.unreadableResponse"));
     }
     if (!response.ok) {
       const error = errorSchema.safeParse(payload);
       if (error.success)
         throw new AppError(
           error.data.code,
-          error.data.message,
-          error.data.issues,
+          { ...error.data, message: translator.message(error.data) },
+          error.data.issues.map((issue) => ({
+            ...issue,
+            message: translator.message(issue),
+          })),
         );
-      throw new AppError(
-        "protocol",
-        "操作に失敗しました。接続先を確認してください。",
-      );
+      throw new AppError("protocol", describe("errors.failedResponse"));
     }
     const result = schema.safeParse(payload);
     if (!result.success)
-      throw new AppError(
-        "protocol",
-        "応答の形式が一致しません。接続先を確認してください。",
-      );
+      throw new AppError("protocol", describe("errors.invalidResponse"));
     return result.data;
   }
   return {
