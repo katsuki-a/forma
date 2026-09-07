@@ -1,5 +1,6 @@
 import { expect, expectTypeOf, test } from "vitest";
 import { ESLint } from "eslint";
+import tseslint from "typescript-eslint";
 import { ja } from "../../src/localization/ja.ts";
 import {
   createTranslator,
@@ -207,7 +208,10 @@ test("FRM-022 API経由でも検証エラーの値を保持し、入力データ
 });
 
 test("FRM-022 lintは文字列・JSX・テンプレートの直書きを検出し、コメントは許容する", async () => {
-  const eslint = new ESLint();
+  // 構文規則の検証に型情報は不要。通常のlintでは型付き検査を維持する。
+  const eslint = new ESLint({
+    overrideConfig: tseslint.configs.disableTypeChecked,
+  });
   for (const source of [
     "export const Label = () => <p>日本語</p>;",
     'export const Label = () => <input aria-label="日本語" />;',
