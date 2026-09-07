@@ -1,3 +1,4 @@
+import { describe, translator } from "../localization/index.ts";
 import type { Application, Values, WorkflowInput } from "../contracts/model.ts";
 import {
   AppError,
@@ -15,11 +16,7 @@ export function createService(
 ) {
   const get = async (id: string) => {
     const app = await repository.get(id);
-    if (!app)
-      throw new AppError(
-        "not_found",
-        "アプリが見つかりません。入口から選び直してください。",
-      );
+    if (!app) throw new AppError("not_found", describe("errors.appNotFound"));
     return app;
   };
   const change = async (
@@ -29,26 +26,16 @@ export function createService(
   ) => {
     const app = await get(id);
     if (app.revision !== revision)
-      throw new AppError(
-        "conflict",
-        "別の操作で変更されています。最新の内容を読み直してください。",
-      );
+      throw new AppError("conflict", describe("errors.conflict"));
     update(app);
     if (app.published) {
       const issues = uniqueIssues(app.published, app.records);
       if (issues.length)
-        throw new AppError(
-          "validation",
-          "重複している項目を修正してください。",
-          issues,
-        );
+        throw new AppError("validation", describe("errors.duplicates"), issues);
     }
     app.revision++;
     if (!(await repository.compareAndSwap(app, revision)))
-      throw new AppError(
-        "conflict",
-        "別の操作で変更されています。最新の内容を読み直してください。",
-      );
+      throw new AppError("conflict", describe("errors.conflict"));
     return app;
   };
   return {
@@ -65,10 +52,7 @@ export function createService(
         nextNumber: 1,
       };
       if (!(await repository.compareAndSwap(app, null)))
-        throw new AppError(
-          "conflict",
-          "作成が競合しました。もう一度お試しください。",
-        );
+        throw new AppError("conflict", describe("errors.createConflict"));
       return app;
     },
     saveDraft: (id: string, revision: number, candidate: unknown) =>
@@ -84,7 +68,11 @@ export function createService(
         const issues = prepared.flatMap((item) => [
           ...item.issues.map((issue) => ({
             ...issue,
-            message: `記録${item.record.number}: ${issue.message}`,
+            recordNumber: item.record.number,
+            message: translator.message({
+              ...issue,
+              recordNumber: item.record.number,
+            }),
           })),
           ...workflowIssues(app.draft, item.record),
         ]);
@@ -97,7 +85,7 @@ export function createService(
         if (issues.length)
           throw new AppError(
             "incompatible_records",
-            "新しい項目に適合しない記録があります。記録または下書きを修正してください。",
+            describe("errors.incompatibleRecords"),
             issues,
           );
         app.published = structuredClone(app.draft);
@@ -118,25 +106,18 @@ export function createService(
     ) =>
       change(id, revision, (app) => {
         if (!app.published)
-          throw new AppError(
-            "not_published",
-            "先にアプリの変更を反映してください。",
-          );
+          throw new AppError("not_published", describe("errors.notPublished"));
         const prepared = prepareValues(app.published, values);
         const issues = prepared.issues;
         if (issues.length)
-          throw new AppError(
-            "validation",
-            "入力内容を確認してください。",
-            issues,
-          );
+          throw new AppError("validation", describe("errors.input"), issues);
         const existing = recordId
           ? app.records.find((r) => r.id === recordId)
           : undefined;
         if (recordId && !existing)
           throw new AppError(
             "not_found",
-            "記録が見つかりません。最新の内容を読み直してください。",
+            describe("errors.recordNotFoundReload"),
           );
         if (existing)
           Object.assign(existing, {
@@ -169,9 +150,10 @@ export function createService(
     ) =>
       change(id, revision, (app) => {
         if (!app.published)
-          throw new AppError("not_published", "先にアプリを反映してください。");
+          throw new AppError("not_published", describe("errors.publishFirst"));
         const record = app.records.find((record) => record.id === recordId);
-        if (!record) throw new AppError("not_found", "記録が見つかりません。");
+        if (!record)
+          throw new AppError("not_found", describe("errors.recordNotFound"));
         changeWorkflow(app.published, record, input);
         record.updatedAt = context.now();
         record.updatedBy = context.actor;
@@ -181,7 +163,7 @@ export function createService(
         if (ids.some((recordId) => !app.records.some((r) => r.id === recordId)))
           throw new AppError(
             "not_found",
-            "削除対象の記録が見つかりません。最新の内容を読み直してください。",
+            describe("errors.deleteRecordNotFound"),
           );
         app.records = app.records.filter((record) => !ids.includes(record.id));
       }),

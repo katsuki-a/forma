@@ -1,3 +1,4 @@
+import { describe } from "../localization/index.ts";
 import type { D1Database } from "@cloudflare/workers-types";
 import { createApi } from "./api.ts";
 import { d1Repository } from "./d1-repository.ts";
@@ -12,7 +13,7 @@ export default {
       return Response.json(
         {
           code: "unavailable",
-          message: "この基本版はローカル検証用です。",
+          ...describe("errors.localOnly"),
           issues: [],
         },
         { status: 503 },

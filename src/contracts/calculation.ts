@@ -1,3 +1,4 @@
+import { MessageError, describe } from "../localization/index.ts";
 // 許可した数値演算だけを解析する。eval/Functionやプロパティ参照は使わない。
 type Expression =
   | { kind: "number"; value: number }
@@ -21,13 +22,14 @@ export function parseFormula(source: string): {
       return { kind: "unary", sign: token === "-" ? -1 : 1, value: primary() };
     if (token === "(") {
       const value = expression(0);
-      if (tokens[index++] !== ")") throw new Error("括弧を閉じてください。");
+      if (tokens[index++] !== ")")
+        throw new MessageError(describe("calculation.parenthesis"));
       return value;
     }
     if (token && /^(?:\d|\.\d)/.test(token)) {
       const value = Number(token);
       if (!Number.isFinite(value))
-        throw new Error("有限の数値を入力してください。");
+        throw new MessageError(describe("calculation.finite"));
       return { kind: "number", value };
     }
     if (token && /^(?:\[|[a-zA-Z])/.test(token)) {
@@ -35,7 +37,7 @@ export function parseFormula(source: string): {
       references.add(id);
       return { kind: "field", id };
     }
-    throw new Error("数値、数値項目、四則演算と括弧で式を入力してください。");
+    throw new MessageError(describe("calculation.syntax"));
   }
   function expression(minimum: number): Expression {
     let left = primary();
@@ -55,7 +57,7 @@ export function parseFormula(source: string): {
   }
   const result = expression(0);
   if (index !== tokens.length)
-    throw new Error("式に使えない文字が含まれています。");
+    throw new MessageError(describe("calculation.characters"));
   return { expression: result, references: [...references] };
 }
 
@@ -69,7 +71,7 @@ export function evaluateFormula(
       const value = values[node.id];
       if (value === undefined || value === null || value === "") return null;
       if (typeof value !== "number" || !Number.isFinite(value))
-        throw new Error("参照する項目に数値を入力してください。");
+        throw new MessageError(describe("calculation.number"));
       return value;
     }
     if (node.kind === "unary") {
@@ -80,7 +82,7 @@ export function evaluateFormula(
     const right = evaluate(node.right);
     if (left === null || right === null) return null;
     if (node.operator === "/" && right === 0)
-      throw new Error("0で割ることはできません。");
+      throw new MessageError(describe("calculation.zero"));
     const result =
       node.operator === "+"
         ? left + right
@@ -90,7 +92,7 @@ export function evaluateFormula(
             ? left * right
             : left / right;
     if (!Number.isFinite(result))
-      throw new Error("計算結果が扱える数値の範囲を超えています。");
+      throw new MessageError(describe("calculation.range"));
     return result;
   }
   const formula = parseFormula(source);

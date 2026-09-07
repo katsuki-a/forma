@@ -1,11 +1,12 @@
+import { t } from "../localization/index.ts";
 import type { Definition, Directory, Workflow } from "../contracts/model.ts";
 import { emptyDirectory } from "../contracts/model.ts";
 import { Button, FormField } from "./components.tsx";
 
 const kinds = [
-  { key: "users", name: "ユーザー" },
-  { key: "organizations", name: "組織" },
-  { key: "groups", name: "グループ" },
+  { key: "users", name: t("fieldTypes.user") },
+  { key: "organizations", name: t("fieldTypes.organization") },
+  { key: "groups", name: t("fieldTypes.group") },
 ] as const;
 
 export function DirectorySettings({
@@ -18,12 +19,14 @@ export function DirectorySettings({
   const directory = value ?? emptyDirectory();
   return (
     <details className="surface section">
-      <summary>ユーザー・組織・グループの候補</summary>
-      <p className="subtle">
-        このアプリで選ぶ候補を登録します。IDは半角英字で始め、英数字・ハイフン・下線を使えます。
-      </p>
+      <summary>{t("directory.title")}</summary>
+      <p className="subtle">{t("directory.description")}</p>
       {kinds.map(({ key, name }) => (
-        <section className="section" key={key} aria-label={`${name}の候補設定`}>
+        <section
+          className="section"
+          key={key}
+          aria-label={t(`directory.${key}.settings`)}
+        >
           <div className="section-heading">
             <h3>{name}</h3>
             <Button
@@ -35,21 +38,23 @@ export function DirectorySettings({
                     ...directory[key],
                     {
                       id: `candidate-${crypto.randomUUID()}`,
-                      name: `新しい${name}`,
+                      name: t(`directory.${key}.new`),
                     },
                   ],
                 })
               }
             >
-              {name}候補を追加
+              {t(`directory.${key}.add`)}
             </Button>
           </div>
           {directory[key].length === 0 && (
-            <p className="subtle">候補はまだありません。</p>
+            <p className="subtle">{t("directory.empty")}</p>
           )}
           {directory[key].map((candidate, index) => (
             <div className="sample-grid section" key={index}>
-              <FormField label={`${name}${index + 1}のID`}>
+              <FormField
+                label={t(`directory.${key}.id`, { position: index + 1 })}
+              >
                 {(id) => (
                   <input
                     id={id}
@@ -67,7 +72,9 @@ export function DirectorySettings({
                   />
                 )}
               </FormField>
-              <FormField label={`${name}${index + 1}の名前`}>
+              <FormField
+                label={t(`directory.${key}.name`, { position: index + 1 })}
+              >
                 {(id) => (
                   <input
                     id={id}
@@ -87,7 +94,9 @@ export function DirectorySettings({
               </FormField>
               <Button
                 kind="danger"
-                aria-label={`${name}${index + 1}の候補を削除`}
+                aria-label={t(`directory.${key}.delete`, {
+                  position: index + 1,
+                })}
                 onClick={() =>
                   onChange({
                     ...directory,
@@ -95,7 +104,7 @@ export function DirectorySettings({
                   })
                 }
               >
-                候補を削除
+                {t("directory.delete")}
               </Button>
             </div>
           ))}
@@ -119,7 +128,7 @@ export function WorkflowSettings({
   };
   return (
     <details className="surface section">
-      <summary>状態と担当者の設定</summary>
+      <summary>{t("workflow.settings")}</summary>
       <label className="choice">
         <input
           type="checkbox"
@@ -129,21 +138,21 @@ export function WorkflowSettings({
               event.target.checked
                 ? {
                     initialState: "todo",
-                    states: [{ id: "todo", name: "未着手", assignees: [] }],
+                    states: [
+                      { id: "todo", name: t("workflow.todo"), assignees: [] },
+                    ],
                     transitions: [],
                   }
                 : undefined,
             )
           }
         />
-        状態と担当者を使う
+        {t("workflow.enabled")}
       </label>
       {workflow && (
         <>
-          <p className="subtle">
-            担当候補は「ユーザー・組織・グループの候補」に登録したユーザーから選びます。
-          </p>
-          <FormField label="初期状態">
+          <p className="subtle">{t("workflow.assigneesHint")}</p>
+          <FormField label={t("workflow.initial")}>
             {(id) => (
               <select
                 id={id}
@@ -164,9 +173,11 @@ export function WorkflowSettings({
             <section
               className="section"
               key={state.id}
-              aria-label={`状態${index + 1}の設定`}
+              aria-label={t("workflow.stateSettings", { position: index + 1 })}
             >
-              <FormField label={`状態${index + 1}の名前`}>
+              <FormField
+                label={t("workflow.stateName", { position: index + 1 })}
+              >
                 {(id) => (
                   <input
                     id={id}
@@ -184,7 +195,13 @@ export function WorkflowSettings({
                 )}
               </FormField>
               <fieldset className="choice-field">
-                <legend>{state.name || `状態${index + 1}`}の担当候補</legend>
+                <legend>
+                  {t("workflow.stateAssignees", {
+                    name:
+                      state.name ||
+                      t("workflow.stateFallback", { position: index + 1 }),
+                  })}
+                </legend>
                 {users.map((user) => (
                   <label className="choice" key={user.id}>
                     <input
@@ -211,15 +228,15 @@ export function WorkflowSettings({
                   </label>
                 ))}
                 {users.length === 0 && (
-                  <p className="subtle">
-                    ユーザー候補を登録すると選択できます。
-                  </p>
+                  <p className="subtle">{t("workflow.noUsers")}</p>
                 )}
               </fieldset>
               <Button
                 kind="danger"
                 disabled={workflow.states.length === 1}
-                aria-label={`状態${index + 1}を削除`}
+                aria-label={t("workflow.deleteStateNamed", {
+                  position: index + 1,
+                })}
                 onClick={() => {
                   const states = workflow.states.filter(
                     (item) => item.id !== state.id,
@@ -236,7 +253,7 @@ export function WorkflowSettings({
                   });
                 }}
               >
-                状態を削除
+                {t("workflow.deleteState")}
               </Button>
             </section>
           ))}
@@ -249,19 +266,21 @@ export function WorkflowSettings({
                   ...workflow.states,
                   {
                     id: `state-${crypto.randomUUID()}`,
-                    name: "新しい状態",
+                    name: t("workflow.newState"),
                     assignees: [],
                   },
                 ],
               })
             }
           >
-            状態を追加
+            {t("workflow.addState")}
           </Button>
-          <h3 className="section">状態を変える操作</h3>
+          <h3 className="section">{t("workflow.transitions")}</h3>
           {workflow.transitions.map((transition, index) => (
             <div className="surface section" key={transition.id}>
-              <FormField label={`遷移${index + 1}の操作名`}>
+              <FormField
+                label={t("workflow.transitionName", { position: index + 1 })}
+              >
                 {(id) => (
                   <input
                     id={id}
@@ -282,7 +301,12 @@ export function WorkflowSettings({
                 {(["from", "to"] as const).map((direction) => (
                   <FormField
                     key={direction}
-                    label={`遷移${index + 1}の${direction === "from" ? "変更前" : "変更後"}`}
+                    label={t(
+                      direction === "from"
+                        ? "workflow.transitionFrom"
+                        : "workflow.transitionTo",
+                      { position: index + 1 },
+                    )}
                   >
                     {(id) => (
                       <select
@@ -310,7 +334,9 @@ export function WorkflowSettings({
               </div>
               <Button
                 kind="danger"
-                aria-label={`遷移${index + 1}を削除`}
+                aria-label={t("workflow.deleteTransitionNamed", {
+                  position: index + 1,
+                })}
                 onClick={() =>
                   update({
                     transitions: workflow.transitions.filter(
@@ -319,7 +345,7 @@ export function WorkflowSettings({
                   })
                 }
               >
-                操作を削除
+                {t("workflow.deleteTransition")}
               </Button>
             </div>
           ))}
@@ -332,7 +358,7 @@ export function WorkflowSettings({
                   ...workflow.transitions,
                   {
                     id: `transition-${crypto.randomUUID()}`,
-                    name: "状態を変更",
+                    name: t("workflow.newTransition"),
                     from: workflow.initialState,
                     to: workflow.states[workflow.states.length - 1].id,
                   },
@@ -340,7 +366,7 @@ export function WorkflowSettings({
               })
             }
           >
-            遷移を追加
+            {t("workflow.addTransition")}
           </Button>
         </>
       )}

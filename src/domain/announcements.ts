@@ -1,3 +1,4 @@
+import { describe } from "../localization/index.ts";
 import {
   AppError,
   announcementInputSchema,
@@ -15,21 +16,18 @@ export function announcementService(
     async saveAnnouncement(candidate: AnnouncementInput) {
       const parsed = announcementInputSchema.safeParse(candidate);
       if (!parsed.success)
-        throw new AppError(
-          "validation",
-          "お知らせのタイトルと本文を確認してください。",
-        );
+        throw new AppError("validation", describe("errors.announcementInput"));
       const input = parsed.data;
       const existing = input.id
         ? await repository.getAnnouncement(input.id)
         : null;
       if (input.id && !existing)
-        throw new AppError("not_found", "お知らせが見つかりません。");
-      if (existing && existing.revision !== input.revision)
         throw new AppError(
-          "conflict",
-          "お知らせが変更されています。最新の内容を読み直してください。",
+          "not_found",
+          describe("errors.announcementNotFound"),
         );
+      if (existing && existing.revision !== input.revision)
+        throw new AppError("conflict", describe("errors.announcementConflict"));
       const announcement: Announcement = {
         id: existing?.id ?? context.id(),
         revision: existing ? existing.revision + 1 : 0,
@@ -44,17 +42,14 @@ export function announcementService(
           input.revision ?? null,
         ))
       )
-        throw new AppError(
-          "conflict",
-          "お知らせが変更されています。最新の内容を読み直してください。",
-        );
+        throw new AppError("conflict", describe("errors.announcementConflict"));
       return announcement;
     },
     async deleteAnnouncement(id: string, revision: number) {
       if (!(await repository.deleteAnnouncement(id, revision)))
         throw new AppError(
           "conflict",
-          "お知らせが変更または削除されています。最新の内容を読み直してください。",
+          describe("errors.announcementDeleteConflict"),
         );
     },
   };
