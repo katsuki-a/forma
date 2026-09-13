@@ -1,3 +1,4 @@
+import { t, describeValidation } from "../localization/index.ts";
 import { useState } from "react";
 import type { Definition, Field, FieldType } from "../contracts/model.ts";
 import {
@@ -46,7 +47,9 @@ export function Editor({
   const validate = () => {
     const result = definitionSchema.safeParse(definition);
     setErrors(
-      result.success ? [] : result.error.issues.map((issue) => issue.message),
+      result.success
+        ? []
+        : result.error.issues.map((issue) => describeValidation(issue).message),
     );
     return result.success;
   };
@@ -54,16 +57,12 @@ export function Editor({
     <>
       <div className="header">
         <div>
-          <h1>{existing ? "項目を編集" : "アプリを作る"}</h1>
-          <p className="subtle">
-            項目を並べて、自分たちに合う記録のかたちを作ります。
-          </p>
+          <h1>{existing ? t("editor.title") : t("portal.create")}</h1>
+          <p className="subtle">{t("editor.description")}</p>
         </div>
-        <span className="status">下書き</span>
+        <span className="status">{t("common.draft")}</span>
       </div>
-      <div className="notice">
-        保存した下書きは、「変更を反映」するまで利用中のアプリに適用されません。
-      </div>
+      <div className="notice">{t("editor.draftNotice")}</div>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -72,7 +71,7 @@ export function Editor({
       >
         <fieldset disabled={busy} className="editor-fields">
           <div className="surface">
-            <FormField label="アプリ名">
+            <FormField label={t("editor.appName")}>
               {(id) => (
                 <input
                   id={id}
@@ -82,7 +81,7 @@ export function Editor({
                 />
               )}
             </FormField>
-            <FormField label="説明">
+            <FormField label={t("editor.descriptionLabel")}>
               {(id) => (
                 <textarea
                   id={id}
@@ -95,20 +94,20 @@ export function Editor({
               )}
             </FormField>
             <div className="sample-grid">
-              <FormField label="アイコン">
+              <FormField label={t("editor.icon")}>
                 {(id) => (
                   <select
                     id={id}
                     value={definition.icon}
                     onChange={(event) => update({ icon: event.target.value })}
                   >
-                    <option value="tree">木</option>
-                    <option value="book">ノート</option>
-                    <option value="home">家</option>
+                    <option value="tree">{t("editor.iconTree")}</option>
+                    <option value="book">{t("editor.iconBook")}</option>
+                    <option value="home">{t("editor.iconHome")}</option>
                   </select>
                 )}
               </FormField>
-              <FormField label="テーマ">
+              <FormField label={t("editor.theme")}>
                 {(id) => (
                   <select
                     id={id}
@@ -119,17 +118,21 @@ export function Editor({
                       })
                     }
                   >
-                    <option value="forest">深緑</option>
-                    <option value="leaf">葉</option>
-                    <option value="moss">苔</option>
+                    <option value="forest">{t("editor.themeForest")}</option>
+                    <option value="leaf">{t("editor.themeLeaf")}</option>
+                    <option value="moss">{t("editor.themeMoss")}</option>
                   </select>
                 )}
               </FormField>
             </div>
           </div>
-          <section className="section" aria-label="項目の設定">
+          <section className="section" aria-label={t("editor.fields")}>
             <div className="section-heading">
-              <h2>{definition.name || "新しいアプリ"}の項目</h2>
+              <h2>
+                {t("editor.fieldsTitle", {
+                  name: definition.name || t("editor.newApp"),
+                })}
+              </h2>
               <Button
                 kind="secondary"
                 onClick={() =>
@@ -138,19 +141,19 @@ export function Editor({
                       ...definition.fields,
                       {
                         id: `field-${crypto.randomUUID()}`,
-                        label: "新しい項目",
+                        label: t("editor.newField"),
                         type: "text",
                       },
                     ],
                   })
                 }
               >
-                項目を追加
+                {t("editor.addField")}
               </Button>
             </div>
             {definition.fields.length === 0 && (
               <div className="empty">
-                <p>項目はまだありません。「項目を追加」から始めてください。</p>
+                <p>{t("editor.empty")}</p>
               </div>
             )}
             <ol className="field-list">
@@ -166,19 +169,21 @@ export function Editor({
                   }}
                 >
                   <div className="section-heading">
-                    <h3>{field.label || "名前のない項目"}</h3>
+                    <h3>{field.label || t("editor.unnamedField")}</h3>
                     <span
                       className="drag-handle"
                       draggable
                       onDragStart={() => setDragged(field.id)}
                       onDragEnd={() => setDragged(null)}
-                      aria-label={`${field.label}をドラッグ`}
+                      aria-label={t("editor.drag", { label: field.label })}
                     >
-                      ⠿ 並べ替え
+                      {t("editor.reorder")}
                     </span>
                   </div>
                   <div className="sample-grid">
-                    <FormField label={`項目${index + 1}の名前`}>
+                    <FormField
+                      label={t("editor.fieldName", { position: index + 1 })}
+                    >
                       {(id) => (
                         <input
                           id={id}
@@ -190,7 +195,9 @@ export function Editor({
                         />
                       )}
                     </FormField>
-                    <FormField label={`項目${index + 1}の種類`}>
+                    <FormField
+                      label={t("editor.fieldType", { position: index + 1 })}
+                    >
                       {(id) => (
                         <select
                           id={id}
@@ -212,7 +219,10 @@ export function Editor({
                                 "checkbox",
                                 "multiselect",
                               ].includes(type)
-                                ? (field.options ?? ["選択肢1", "選択肢2"])
+                                ? (field.options ?? [
+                                    t("editor.optionOne"),
+                                    t("editor.optionTwo"),
+                                  ])
                                 : undefined,
                             });
                           }}
@@ -230,8 +240,8 @@ export function Editor({
                     field.type,
                   ) && (
                     <FormField
-                      label={`項目${index + 1}の選択肢`}
-                      hint="一行に一つずつ入力してください。"
+                      label={t("editor.fieldOptions", { position: index + 1 })}
+                      hint={t("editor.optionsHint")}
                     >
                       {(id) => (
                         <textarea
@@ -251,7 +261,9 @@ export function Editor({
                     <label className="choice">
                       <input
                         type="checkbox"
-                        aria-label={`${field.label}の重複を禁止する`}
+                        aria-label={t("editor.uniqueNamed", {
+                          label: field.label,
+                        })}
                         checked={field.unique ?? false}
                         onChange={(event) =>
                           updateField(field.id, {
@@ -259,14 +271,16 @@ export function Editor({
                           })
                         }
                       />
-                      値の重複を禁止する
+                      {t("editor.unique")}
                     </label>
                   )}
                   {field.type === "calculation" && (
                     <div className="field">
                       <FormField
-                        label={`項目${index + 1}の計算式`}
-                        hint="数値項目を挿入し、+ − * / と括弧で計算します。未入力を含む式の結果は空になります。"
+                        label={t("editor.fieldFormula", {
+                          position: index + 1,
+                        })}
+                        hint={t("editor.formulaHint")}
                       >
                         {(id) => (
                           <input
@@ -287,14 +301,17 @@ export function Editor({
                             <Button
                               key={item.id}
                               kind="secondary"
-                              aria-label={`${field.label}の式に${item.label}を挿入`}
+                              aria-label={t("editor.insertNamed", {
+                                label: field.label,
+                                reference: item.label,
+                              })}
                               onClick={() =>
                                 updateField(field.id, {
                                   formula: `${field.formula ?? ""}[${item.id}]`,
                                 })
                               }
                             >
-                              {item.label}を挿入
+                              {t("editor.insert", { label: item.label })}
                             </Button>
                           ))}
                       </div>
@@ -303,23 +320,25 @@ export function Editor({
                   <div className="button-row">
                     <Button
                       kind="secondary"
-                      aria-label={`${field.label}を上へ`}
+                      aria-label={t("editor.upNamed", { label: field.label })}
                       disabled={index === 0}
                       onClick={() => move(field.id, index - 1)}
                     >
-                      上へ
+                      {t("common.moveUp")}
                     </Button>
                     <Button
                       kind="secondary"
-                      aria-label={`${field.label}を下へ`}
+                      aria-label={t("editor.downNamed", { label: field.label })}
                       disabled={index === definition.fields.length - 1}
                       onClick={() => move(field.id, index + 1)}
                     >
-                      下へ
+                      {t("common.moveDown")}
                     </Button>
                     <Button
                       kind="danger"
-                      aria-label={`${field.label}の項目を削除`}
+                      aria-label={t("editor.deleteNamed", {
+                        label: field.label,
+                      })}
                       onClick={() =>
                         update({
                           fields: definition.fields.filter(
@@ -328,7 +347,7 @@ export function Editor({
                         })
                       }
                     >
-                      項目を削除
+                      {t("editor.deleteField")}
                     </Button>
                   </div>
                 </li>
@@ -352,7 +371,7 @@ export function Editor({
           )}
           <div className="button-row section">
             <Button type="submit">
-              {existing ? "下書きを保存" : "アプリを作成"}
+              {existing ? t("editor.saveDraft") : t("editor.create")}
             </Button>
             <Button
               kind="secondary"
@@ -360,7 +379,7 @@ export function Editor({
                 if (validate()) setPreview(!preview);
               }}
             >
-              動作確認
+              {t("editor.preview")}
             </Button>
             {existing && (
               <Button
@@ -368,20 +387,23 @@ export function Editor({
                   if (validate()) void onSave(definition, true);
                 }}
               >
-                変更を反映
+                {t("editor.publish")}
               </Button>
             )}
             <Button kind="secondary" onClick={onCancel}>
-              戻る
+              {t("common.back")}
             </Button>
           </div>
         </fieldset>
       </form>
       {preview && (
-        <section className="section surface" aria-label="下書きの動作確認">
+        <section
+          className="section surface"
+          aria-label={t("editor.previewTitle")}
+        >
           <div className="section-heading">
-            <h2>下書きの動作確認</h2>
-            <span className="status">保存されません</span>
+            <h2>{t("editor.previewTitle")}</h2>
+            <span className="status">{t("editor.notSaved")}</span>
           </div>
           <RecordForm definition={definition} busy={busy} preview />
         </section>

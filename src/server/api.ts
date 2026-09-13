@@ -1,3 +1,4 @@
+import { describe } from "../localization/index.ts";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -44,7 +45,7 @@ export function createApi(repository: Repository, actor = "local-user") {
         return c.json(
           {
             code: "forbidden",
-            message: "許可されていない接続元です。",
+            ...describe("errors.origin"),
             issues: [],
           },
           403,
@@ -54,7 +55,7 @@ export function createApi(repository: Repository, actor = "local-user") {
         return c.json(
           {
             code: "validation",
-            message: "JSON形式で送信してください。",
+            ...describe("errors.json"),
             issues: [],
           },
           415,
@@ -68,14 +69,20 @@ export function createApi(repository: Repository, actor = "local-user") {
       return c.json(
         {
           code: "validation",
-          message: "送信内容の形式を確認してください。",
+          ...describe("errors.request"),
           issues: [],
         },
         400,
       );
     if (error instanceof AppError)
       return c.json(
-        { code: error.code, message: error.message, issues: error.issues },
+        {
+          code: error.code,
+          message: error.message,
+          messageKey: error.messageKey,
+          messageParams: error.messageParams,
+          issues: error.issues,
+        },
         error.code === "not_found"
           ? 404
           : ["conflict", "incompatible_records", "not_published"].includes(
@@ -88,7 +95,7 @@ export function createApi(repository: Repository, actor = "local-user") {
     return c.json(
       {
         code: "internal",
-        message: "保存先に接続できません。時間をおいて再試行してください。",
+        ...describe("errors.storage"),
         issues: [],
       },
       500,
@@ -162,10 +169,7 @@ export function createApi(repository: Repository, actor = "local-user") {
     );
   });
   api.notFound((c) =>
-    c.json(
-      { code: "not_found", message: "操作先が見つかりません。", issues: [] },
-      404,
-    ),
+    c.json({ code: "not_found", ...describe("errors.route"), issues: [] }, 404),
   );
   return api;
 }

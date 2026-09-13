@@ -1,3 +1,13 @@
+import {
+  t,
+  describe,
+  describeValidation,
+  messageKey,
+  MessageError,
+  translator,
+  type LocalizedMessage,
+  type MessageParams,
+} from "../localization/index.ts";
 import { z } from "zod";
 import { evaluateFormula, parseFormula } from "./calculation.ts";
 
@@ -21,23 +31,23 @@ export const fieldTypes = [
   "group",
 ] as const;
 export const fieldLabels: Record<FieldType, string> = {
-  text: "一行テキスト",
-  textarea: "複数行テキスト",
-  number: "数値",
-  radio: "ラジオボタン",
-  select: "ドロップダウン",
-  checkbox: "チェックボックス",
-  multiselect: "複数選択",
-  date: "日付",
-  time: "時刻",
-  datetime: "日時",
-  url: "URL",
-  tel: "電話番号",
-  email: "メールアドレス",
-  calculation: "計算",
-  user: "ユーザー",
-  organization: "組織",
-  group: "グループ",
+  text: t("fieldTypes.text"),
+  textarea: t("fieldTypes.textarea"),
+  number: t("fieldTypes.number"),
+  radio: t("fieldTypes.radio"),
+  select: t("fieldTypes.select"),
+  checkbox: t("fieldTypes.checkbox"),
+  multiselect: t("fieldTypes.multiselect"),
+  date: t("fieldTypes.date"),
+  time: t("fieldTypes.time"),
+  datetime: t("fieldTypes.datetime"),
+  url: t("fieldTypes.url"),
+  tel: t("fieldTypes.tel"),
+  email: t("fieldTypes.email"),
+  calculation: t("fieldTypes.calculation"),
+  user: t("fieldTypes.user"),
+  organization: t("fieldTypes.organization"),
+  group: t("fieldTypes.group"),
 };
 export const identifier = z
   .string()
@@ -97,7 +107,7 @@ export const fieldSchema = z.strictObject({
 export const definitionSchema = z
   .strictObject({
     version: z.literal(1),
-    name: z.string().trim().min(1, "アプリ名を入力してください。"),
+    name: z.string().trim().min(1, messageKey("errors.appName")),
     description: z.string(),
     icon: z.string(),
     theme: z.enum(["forest", "leaf", "moss"]),
@@ -112,14 +122,14 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["fields", index, "id"],
-          message: "項目IDが重複しています。",
+          message: messageKey("errors.duplicateFieldId"),
         });
       ids.add(field.id);
       if (field.unique && !uniqueFieldTypes.includes(field.type))
         ctx.addIssue({
           code: "custom",
           path: ["fields", index, "unique"],
-          message: "この種類には重複禁止を設定できません。",
+          message: messageKey("errors.unsupportedUnique"),
         });
       if (field.type === "calculation") {
         try {
@@ -131,13 +141,15 @@ export const definitionSchema = z
                   ?.type !== "number",
             )
           )
-            throw new Error("式には数値項目だけを参照してください。");
+            throw new MessageError(describe("errors.formulaReferences"));
         } catch (error) {
           ctx.addIssue({
             code: "custom",
             path: ["fields", index, "formula"],
             message:
-              error instanceof Error ? error.message : "式を確認してください。",
+              error instanceof MessageError
+                ? (error.messageKey ?? "errors.formula")
+                : "errors.formula",
           });
         }
       }
@@ -150,7 +162,7 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["fields", index, "options"],
-          message: "重複しない選択肢を入力してください。",
+          message: messageKey("errors.options"),
         });
       }
     });
@@ -164,7 +176,7 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["directory", kind],
-          message: "候補IDを重複しない値にしてください。",
+          message: messageKey("errors.candidateId"),
         });
     }
     if (definition.workflow) {
@@ -178,7 +190,7 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["workflow"],
-          message: "状態IDの重複と初期状態を確認してください。",
+          message: messageKey("errors.states"),
         });
       if (
         workflow.states.some(
@@ -190,7 +202,7 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["workflow"],
-          message: "担当候補は登録済みのユーザーから選んでください。",
+          message: messageKey("errors.assignees"),
         });
       if (
         new Set(workflow.transitions.map((item) => item.id)).size !==
@@ -202,7 +214,7 @@ export const definitionSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["workflow"],
-          message: "遷移IDの重複と遷移元・遷移先の状態を確認してください。",
+          message: messageKey("errors.transitions"),
         });
     }
   });
@@ -217,10 +229,19 @@ export const valueSchema = z.union([
 ]);
 export const valuesSchema = z.record(identifier, valueSchema);
 export type Values = z.infer<typeof valuesSchema>;
+const messageDescriptorShape = {
+  messageKey: z.string().optional(),
+  messageParams: z
+    .record(z.string(), z.union([z.string(), z.number().finite()]))
+    .optional(),
+  fieldLabel: z.string().optional(),
+  recordNumber: z.number().optional(),
+};
 export const issueSchema = z.object({
   fieldId: z.string().optional(),
   code: z.string(),
   message: z.string(),
+  ...messageDescriptorShape,
 });
 export type Issue = z.infer<typeof issueSchema>;
 export const recordSchema = z.object({
@@ -249,13 +270,22 @@ export type Application = z.infer<typeof appSchema>;
 export const errorSchema = z.object({
   code: z.string(),
   message: z.string(),
+  ...messageDescriptorShape,
   issues: z.array(issueSchema),
 });
 export class AppError extends Error {
   code: string;
   issues: Issue[];
-  constructor(code: string, message: string, issues: Issue[] = []) {
-    super(message);
+  messageKey?: string;
+  messageParams?: MessageParams;
+  constructor(
+    code: string,
+    description: LocalizedMessage,
+    issues: Issue[] = [],
+  ) {
+    super(description.message);
+    this.messageKey = description.messageKey;
+    this.messageParams = description.messageParams;
     this.code = code;
     this.issues = issues;
   }
@@ -265,10 +295,10 @@ export function parseDefinition(input: unknown): Definition {
   if (result.success) return result.data;
   throw new AppError(
     "validation",
-    "アプリ名と項目の設定を確認してください。",
+    describe("errors.definition"),
     result.error.issues.map((issue) => ({
       code: issue.code,
-      message: issue.message,
+      ...describeValidation(issue),
       fieldId:
         issue.path[0] === "fields" && typeof issue.path[1] === "number"
           ? (input as Definition)?.fields?.[issue.path[1]]?.id
@@ -295,7 +325,7 @@ export function validateValues(
     return parsed.error.issues.map((i) => ({
       fieldId: String(i.path[0] ?? ""),
       code: "invalid_value",
-      message: "項目の型に合う値を入力してください。",
+      ...describe("errors.invalidValue"),
     }));
   const values = parsed.data;
   const issues: Issue[] = Object.keys(values)
@@ -303,7 +333,7 @@ export function validateValues(
     .map((fieldId) => ({
       fieldId,
       code: "unknown_field",
-      message: "定義にない項目が含まれています。",
+      ...describe("errors.unknownField"),
     }));
   for (const field of definition.fields) {
     if (field.type === "calculation") continue;
@@ -364,7 +394,7 @@ export function validateValues(
       issues.push({
         fieldId: field.id,
         code: "invalid_value",
-        message: `${field.label}を${fieldLabels[field.type]}の形式で入力してください。`,
+        ...describe(`errors.fieldValue.${field.type}`, { label: field.label }),
       });
   }
   return issues;
@@ -372,14 +402,14 @@ export function validateValues(
 export const templates: Definition[] = [
   {
     version: 1,
-    name: "暮らしの記録",
-    description: "日々の用事や気づきをまとめます。",
+    name: t("templates.dailyName"),
+    description: t("templates.dailyDescription"),
     icon: "tree",
     theme: "forest",
     fields: [
-      { id: "title", label: "内容", type: "text" },
-      { id: "note", label: "メモ", type: "textarea" },
-      { id: "date", label: "日付", type: "date" },
+      { id: "title", label: t("templates.content"), type: "text" },
+      { id: "note", label: t("templates.note"), type: "textarea" },
+      { id: "date", label: t("fieldTypes.date"), type: "date" },
     ],
   },
 ];
@@ -420,11 +450,21 @@ export function prepareValues(
       issues.push({
         fieldId: field.id,
         code: "calculation",
-        message: `${field.label}: ${error instanceof Error ? error.message : "計算できません。"}`,
+        ...describe("errors.calculation"),
+        ...(error instanceof MessageError
+          ? { messageKey: error.messageKey, messageParams: error.messageParams }
+          : {}),
+        fieldLabel: field.label,
       });
     }
   }
-  return { values, issues };
+  return {
+    values,
+    issues: issues.map((issue) => ({
+      ...issue,
+      message: translator.message(issue),
+    })),
+  };
 }
 export function uniqueIssues(
   definition: Definition,
@@ -447,7 +487,11 @@ export function uniqueIssues(
         issues.push({
           fieldId: field.id,
           code: "duplicate",
-          message: `${field.label}が記録${previous}と記録${record.number}で重複しています。`,
+          ...describe("errors.duplicateValue", {
+            label: field.label,
+            previous,
+            number: record.number,
+          }),
         });
       else seen.set(value, record.number);
     }
@@ -458,12 +502,12 @@ export const announcementInputSchema = z
   .strictObject({
     id: z.string().optional(),
     revision: z.number().int().nonnegative().optional(),
-    title: z.string().trim().min(1, "タイトルを入力してください。"),
+    title: z.string().trim().min(1, messageKey("errors.announcementTitle")),
     body: z.string(),
   })
   .refine(
     (input) => (input.id === undefined) === (input.revision === undefined),
-    "更新にはIDとリビジョンが必要です。",
+    messageKey("errors.announcementRevision"),
   );
 export type AnnouncementInput = z.infer<typeof announcementInputSchema>;
 export const announcementSchema = z.object({

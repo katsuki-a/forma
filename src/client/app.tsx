@@ -1,3 +1,4 @@
+import { t, describe } from "../localization/index.ts";
 import { useEffect, useState } from "react";
 import type {
   Application,
@@ -39,10 +40,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
           setError(
             error instanceof AppError
               ? error
-              : new AppError(
-                  "unexpected",
-                  "読み込みに失敗しました。再試行してください。",
-                ),
+              : new AppError("unexpected", describe("errors.loadApps")),
           );
       })
       .finally(() => {
@@ -86,10 +84,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
       setError(
         error instanceof AppError
           ? error
-          : new AppError(
-              "unexpected",
-              "操作を完了できません。もう一度お試しください。",
-            ),
+          : new AppError("unexpected", describe("errors.unexpected")),
       );
     } finally {
       setBusy(false);
@@ -97,12 +92,12 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
   };
   return (
     <div className="shell" data-theme={visibleDefinition?.theme ?? "forest"}>
-      <nav className="nav" aria-label="アプリの構造">
+      <nav className="nav" aria-label={t("portal.structure")}>
         <div className="brand">
           <TreeMark />
           forma
         </div>
-        <p className="nav-title">家族と、仲間と。</p>
+        <p className="nav-title">{t("portal.audience")}</p>
         <ul className="tree">
           <li>
             <button
@@ -111,7 +106,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
               aria-current={view.kind === "portal" ? "page" : undefined}
               onClick={() => navigate({ kind: "portal" })}
             >
-              情報共有の入口
+              {t("portal.title")}
             </button>
           </li>
           {apps.map((app) => (
@@ -137,11 +132,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
             </li>
           ))}
         </ul>
-        <p className="nav-note">
-          情報にかたちを。
-          <br />
-          日々の記録を、ひとつの場所に。
-        </p>
+        <p className="nav-note">{t("portal.tagline")}</p>
       </nav>
       <main className="main" aria-busy={busy}>
         {error && (
@@ -156,25 +147,23 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
               onClick={() =>
                 void run(async () => {
                   setApps(await client.list());
-                  setMessage("最新の内容を読み込みました。");
+                  setMessage(t("portal.reloaded"));
                 })
               }
             >
-              最新の内容を読み直す
+              {t("portal.reload")}
             </Button>
           </div>
         )}
         <p role="status" className="feedback">
-          {busy ? "処理しています…" : message}
+          {busy ? t("common.processing") : message}
         </p>
         {view.kind === "portal" && (
           <>
             <header className="header">
               <div>
-                <h1>情報共有の入口</h1>
-                <p className="subtle">
-                  暮らしの記録も、仲間とのメモも。必要な情報を一つの場所へ。
-                </p>
+                <h1>{t("portal.title")}</h1>
+                <p className="subtle">{t("portal.description")}</p>
               </div>
               <Button
                 disabled={busy}
@@ -182,20 +171,20 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                   navigate({ kind: "create", definition: emptyDefinition() })
                 }
               >
-                アプリを作る
+                {t("portal.create")}
               </Button>
             </header>
             <section aria-labelledby="apps-heading">
               <div className="section-heading">
-                <h2 id="apps-heading">アプリ</h2>
-                <span className="subtle">{apps.length}件</span>
+                <h2 id="apps-heading">{t("portal.apps")}</h2>
+                <span className="subtle">
+                  {t("portal.appCount", { count: apps.length })}
+                </span>
               </div>
               {apps.length === 0 ? (
                 <div className="empty">
-                  <h3>最初のアプリを作りましょう</h3>
-                  <p>
-                    空のアプリから項目を選ぶか、暮らしの記録をひな形にできます。
-                  </p>
+                  <h3>{t("portal.emptyTitle")}</h3>
+                  <p>{t("portal.emptyDescription")}</p>
                   <Button
                     kind="secondary"
                     disabled={busy}
@@ -206,7 +195,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                       })
                     }
                   >
-                    テンプレートから作る
+                    {t("portal.fromTemplate")}
                   </Button>
                 </div>
               ) : (
@@ -228,13 +217,15 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                           </button>
                           <p className="subtle">
                             {(app.published ?? app.draft).description ||
-                              "説明はまだありません。"}
+                              t("portal.noDescription")}
                           </p>
                         </div>
                         <span className="status">
                           {app.published
-                            ? `${app.records.length}件の記録`
-                            : "下書き"}
+                            ? t("portal.recordCount", {
+                                count: app.records.length,
+                              })
+                            : t("common.draft")}
                         </span>
                       </li>
                     ))}
@@ -254,7 +245,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                     })
                   }
                 >
-                  テンプレートから作る
+                  {t("portal.fromTemplate")}
                 </Button>
               </div>
             )}
@@ -295,7 +286,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                   setView({ kind: "records", id: app.id });
                 }
                 setMessage(
-                  publish ? "変更を反映しました。" : "下書きを保存しました。",
+                  publish ? t("editor.published") : t("editor.draftSaved"),
                 );
               })
             }
@@ -312,7 +303,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                 kind: "create",
                 definition: {
                   ...structuredClone(current.draft),
-                  name: `${current.draft.name}のコピー`,
+                  name: t("editor.copyName", { name: current.draft.name }),
                 },
               })
             }
@@ -326,7 +317,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                     recordId,
                   ),
                 );
-                setMessage("記録を保存しました。");
+                setMessage(t("records.saved"));
               })
             }
             onWorkflow={(recordId, input) =>
@@ -339,7 +330,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                     input,
                   ),
                 );
-                setMessage("状態と担当者を保存しました。");
+                setMessage(t("workflow.saved"));
               })
             }
             onDelete={(ids) =>
@@ -347,7 +338,7 @@ export function App({ client = defaultClient }: { client?: ApiClient }) {
                 update(
                   await client.deleteRecords(current.id, current.revision, ids),
                 );
-                setMessage("記録を削除しました。");
+                setMessage(t("records.deleted"));
               })
             }
           />
@@ -390,25 +381,25 @@ function Records({
         </div>
         <div className="button-row">
           <Button kind="secondary" disabled={busy} onClick={onEdit}>
-            項目を編集
+            {t("editor.title")}
           </Button>
           <Button kind="secondary" disabled={busy} onClick={onCopy}>
-            アプリを複製
+            {t("records.duplicateApp")}
           </Button>
         </div>
       </header>
       {!app.published ? (
         <div className="empty">
-          <h2>このアプリは下書きです</h2>
-          <p>項目を動作確認し、「変更を反映」して記録を始めてください。</p>
+          <h2>{t("records.draftTitle")}</h2>
+          <p>{t("records.draftDescription")}</p>
           <Button disabled={busy} onClick={onEdit}>
-            下書きを開く
+            {t("records.openDraft")}
           </Button>
         </div>
       ) : (
         <>
           <div className="section-heading">
-            <h2>記録</h2>
+            <h2>{t("records.title")}</h2>
             <Button
               disabled={busy}
               onClick={() => {
@@ -416,26 +407,28 @@ function Records({
                 setEditing("new");
               }}
             >
-              記録を追加
+              {t("records.add")}
             </Button>
           </div>
           {app.records.length === 0 ? (
             <div className="empty">
-              <p>記録はまだありません。「記録を追加」から始めてください。</p>
+              <p>{t("records.empty")}</p>
             </div>
           ) : (
             <div
               className="table-wrap"
               role="region"
-              aria-label="記録一覧"
+              aria-label={t("records.table")}
               tabIndex={0}
             >
               <table>
-                <caption>{definition.name}の記録</caption>
+                <caption>
+                  {t("records.caption", { name: definition.name })}
+                </caption>
                 <thead>
                   <tr>
-                    <th scope="col">選択</th>
-                    <th scope="col">番号</th>
+                    <th scope="col">{t("records.selection")}</th>
+                    <th scope="col">{t("records.number")}</th>
                     {definition.fields.map((field) => (
                       <th scope="col" key={field.id}>
                         {field.label}
@@ -443,11 +436,11 @@ function Records({
                     ))}
                     {definition.workflow && (
                       <>
-                        <th scope="col">状態</th>
-                        <th scope="col">担当者</th>
+                        <th scope="col">{t("common.state")}</th>
+                        <th scope="col">{t("common.assignee")}</th>
                       </>
                     )}
-                    <th scope="col">操作</th>
+                    <th scope="col">{t("records.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -457,7 +450,9 @@ function Records({
                         <input
                           type="checkbox"
                           disabled={busy}
-                          aria-label={`記録${record.number}を選択`}
+                          aria-label={t("records.selectNamed", {
+                            number: record.number,
+                          })}
                           checked={selected.includes(record.id)}
                           onChange={(event) =>
                             setSelected(
@@ -490,12 +485,12 @@ function Records({
                           <td>
                             {definition.workflow.states.find(
                               (state) => state.id === record.workflow?.stateId,
-                            )?.name ?? "未設定"}
+                            )?.name ?? t("common.unset")}
                           </td>
                           <td>
                             {definition.directory?.users.find(
                               (user) => user.id === record.workflow?.assigneeId,
-                            )?.name ?? "未指定"}
+                            )?.name ?? t("common.unassigned")}
                           </td>
                         </>
                       )}
@@ -504,24 +499,28 @@ function Records({
                           <Button
                             kind="secondary"
                             disabled={busy}
-                            aria-label={`記録${record.number}を開く`}
+                            aria-label={t("records.openNamed", {
+                              number: record.number,
+                            })}
                             onClick={() => {
                               setInitial(record.values);
                               setEditing(record);
                             }}
                           >
-                            開く
+                            {t("common.open")}
                           </Button>
                           <Button
                             kind="secondary"
                             disabled={busy}
-                            aria-label={`記録${record.number}を再利用`}
+                            aria-label={t("records.reuseNamed", {
+                              number: record.number,
+                            })}
                             onClick={() => {
                               setInitial(record.values);
                               setEditing("new");
                             }}
                           >
-                            再利用
+                            {t("common.reuse")}
                           </Button>
                         </div>
                       </td>
@@ -538,7 +537,7 @@ function Records({
                 disabled={busy}
                 onClick={() => setConfirmDelete(true)}
               >
-                選んだ{selected.length}件を削除
+                {t("records.deleteSelected", { count: selected.length })}
               </Button>
             </div>
           )}
@@ -549,9 +548,9 @@ function Records({
               className="surface section"
             >
               <h2 id="delete-title">
-                選んだ{selected.length}件の記録を削除しますか？
+                {t("records.deleteConfirm", { count: selected.length })}
               </h2>
-              <p>削除した記録は元に戻せません。</p>
+              <p>{t("records.deleteWarning")}</p>
               <div className="button-row">
                 <Button
                   kind="danger"
@@ -560,43 +559,43 @@ function Records({
                     void onDelete(selected);
                   }}
                 >
-                  削除を確定
+                  {t("records.confirmDelete")}
                 </Button>
                 <Button
                   kind="secondary"
                   disabled={busy}
                   onClick={() => setConfirmDelete(false)}
                 >
-                  キャンセル
+                  {t("common.cancel")}
                 </Button>
               </div>
             </section>
           )}
           {editing && (
-            <section className="surface section" aria-label="記録の編集">
+            <section className="surface section" aria-label={t("records.edit")}>
               <div className="section-heading">
                 <h2>
                   {editing === "new"
-                    ? "新しい記録"
-                    : `記録${editing.number}の詳細・編集`}
+                    ? t("records.new")
+                    : t("records.details", { number: editing.number })}
                 </h2>
                 <Button
                   kind="secondary"
                   disabled={busy}
                   onClick={() => setEditing(null)}
                 >
-                  閉じる
+                  {t("common.close")}
                 </Button>
               </div>
               {editing !== "new" && (
                 <dl className="record-meta">
-                  <dt>作成者</dt>
+                  <dt>{t("records.createdBy")}</dt>
                   <dd>{editing.createdBy}</dd>
-                  <dt>更新者</dt>
+                  <dt>{t("records.updatedBy")}</dt>
                   <dd>{editing.updatedBy}</dd>
-                  <dt>作成日時</dt>
+                  <dt>{t("records.createdAt")}</dt>
                   <dd>{editing.createdAt}</dd>
-                  <dt>更新日時</dt>
+                  <dt>{t("records.updatedAt")}</dt>
                   <dd>{editing.updatedAt}</dd>
                 </dl>
               )}

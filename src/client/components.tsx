@@ -1,3 +1,4 @@
+import { t, translator } from "../localization/index.ts";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useId, useState } from "react";
 import type { Definition, Field, Issue, Values } from "../contracts/model.ts";
@@ -91,9 +92,7 @@ export function FieldInput({
           </label>
         ))}
         {candidates.length === 0 && (
-          <p className="subtle">
-            候補がありません。項目編集画面で候補を登録してください。
-          </p>
+          <p className="subtle">{t("records.noCandidates")}</p>
         )}
         {error && (
           <p className="error" id={`${id}-error`}>
@@ -141,7 +140,7 @@ export function FieldInput({
         ))}
         {!multiple && (
           <Button kind="secondary" onClick={() => onChange(null)}>
-            選択を解除
+            {t("common.clearSelection")}
           </Button>
         )}
         {error && (
@@ -165,7 +164,7 @@ export function FieldInput({
           )
         }
       >
-        {!multiple && <option value="">選んでください</option>}
+        {!multiple && <option value="">{t("common.select")}</option>}
         {field.options?.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -244,9 +243,7 @@ export function RecordForm({
       }}
     >
       {definition.fields.length === 0 && (
-        <p className="notice">
-          項目がまだありません。「項目を編集」から追加できます。
-        </p>
+        <p className="notice">{t("records.noFields")}</p>
       )}
       {definition.fields.map((field) => (
         <FieldInput
@@ -263,11 +260,11 @@ export function RecordForm({
         />
       ))}
       <Button type="submit" disabled={busy}>
-        {preview ? "入力を確認" : "記録を保存"}
+        {preview ? t("records.check") : t("records.save")}
       </Button>
       {checked && preview && (
         <p role="status" className="feedback">
-          入力を確認しました。この動作確認では記録は保存されません。
+          {t("records.checked")}
         </p>
       )}
     </form>
@@ -296,11 +293,11 @@ export function displayValue(
 ): string {
   if (Array.isArray(value)) {
     const candidates = fieldCandidates(definition, field.type);
-    return value
-      .map(
+    return translator.list(
+      value.map(
         (id) => candidates.find((candidate) => candidate.id === id)?.name ?? id,
-      )
-      .join("、");
+      ),
+    );
   }
   return String(value ?? "");
 }

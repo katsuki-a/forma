@@ -1,3 +1,4 @@
+import { t } from "../localization/index.ts";
 import { useEffect, useState } from "react";
 import { AppError, type Announcement } from "../contracts/model.ts";
 import type { ApiClient } from "./api-client.ts";
@@ -20,7 +21,7 @@ export function Announcements({ client }: { client: ApiClient }) {
         if (active) setItems(result);
       })
       .catch(() => {
-        if (active) setError("お知らせを読み込めません。読み直してください。");
+        if (active) setError(t("errors.loadAnnouncements"));
       })
       .finally(() => {
         if (active) setBusy(false);
@@ -37,9 +38,7 @@ export function Announcements({ client }: { client: ApiClient }) {
       await operation();
     } catch (error) {
       setError(
-        error instanceof AppError
-          ? error.message
-          : "操作に失敗しました。再試行してください。",
+        error instanceof AppError ? error.message : t("errors.operationFailed"),
       );
     } finally {
       setBusy(false);
@@ -48,7 +47,7 @@ export function Announcements({ client }: { client: ApiClient }) {
   return (
     <section className="section" aria-labelledby="announcements-heading">
       <div className="section-heading">
-        <h2 id="announcements-heading">お知らせ</h2>
+        <h2 id="announcements-heading">{t("announcements.title")}</h2>
         <Button
           kind="secondary"
           disabled={busy}
@@ -58,7 +57,7 @@ export function Announcements({ client }: { client: ApiClient }) {
             setBody("");
           }}
         >
-          お知らせを追加
+          {t("announcements.add")}
         </Button>
       </div>
       {error && (
@@ -73,15 +72,15 @@ export function Announcements({ client }: { client: ApiClient }) {
               });
             }}
           >
-            お知らせを読み直す
+            {t("announcements.reload")}
           </Button>
         </div>
       )}
       <p role="status" className="feedback">
-        {busy ? "お知らせを読み込んでいます…" : message}
+        {busy ? t("announcements.loading") : message}
       </p>
       {!busy && items.length === 0 && (
-        <p className="subtle">お知らせはまだありません。</p>
+        <p className="subtle">{t("announcements.empty")}</p>
       )}
       {items.map((item) => (
         <article className="surface section" key={item.id}>
@@ -91,22 +90,22 @@ export function Announcements({ client }: { client: ApiClient }) {
             <Button
               kind="secondary"
               disabled={busy}
-              aria-label={`${item.title}を編集`}
+              aria-label={t("announcements.editNamed", { title: item.title })}
               onClick={() => {
                 setEditing(item);
                 setTitle(item.title);
                 setBody(item.body);
               }}
             >
-              編集
+              {t("common.edit")}
             </Button>
             <Button
               kind="danger"
               disabled={busy}
-              aria-label={`${item.title}を削除`}
+              aria-label={t("announcements.deleteNamed", { title: item.title })}
               onClick={() => setDeleting(item)}
             >
-              削除
+              {t("common.delete")}
             </Button>
           </div>
         </article>
@@ -114,7 +113,7 @@ export function Announcements({ client }: { client: ApiClient }) {
       {editing && (
         <form
           className="surface section"
-          aria-label="お知らせの編集"
+          aria-label={t("announcements.edit")}
           onSubmit={(event) => {
             event.preventDefault();
             void run(async () => {
@@ -133,11 +132,11 @@ export function Announcements({ client }: { client: ApiClient }) {
                   : [...previous, saved],
               );
               setEditing(null);
-              setMessage("お知らせを保存しました。");
+              setMessage(t("announcements.saved"));
             });
           }}
         >
-          <FormField label="お知らせのタイトル">
+          <FormField label={t("announcements.titleLabel")}>
             {(id) => (
               <input
                 id={id}
@@ -148,7 +147,7 @@ export function Announcements({ client }: { client: ApiClient }) {
               />
             )}
           </FormField>
-          <FormField label="お知らせの本文">
+          <FormField label={t("announcements.bodyLabel")}>
             {(id) => (
               <textarea
                 id={id}
@@ -161,14 +160,14 @@ export function Announcements({ client }: { client: ApiClient }) {
           </FormField>
           <div className="button-row">
             <Button type="submit" disabled={busy}>
-              お知らせを保存
+              {t("announcements.save")}
             </Button>
             <Button
               kind="secondary"
               disabled={busy}
               onClick={() => setEditing(null)}
             >
-              キャンセル
+              {t("common.cancel")}
             </Button>
           </div>
         </form>
@@ -180,7 +179,7 @@ export function Announcements({ client }: { client: ApiClient }) {
           className="surface section"
         >
           <h3 id="announcement-delete-title">
-            「{deleting.title}」を削除しますか？
+            {t("announcements.deleteConfirm", { title: deleting.title })}
           </h3>
           <div className="button-row">
             <Button
@@ -198,18 +197,18 @@ export function Announcements({ client }: { client: ApiClient }) {
                   setDeleting(null);
                   if (editing !== "new" && editing?.id === deleting.id)
                     setEditing(null);
-                  setMessage("お知らせを削除しました。");
+                  setMessage(t("announcements.deleted"));
                 });
               }}
             >
-              お知らせの削除を確定
+              {t("announcements.confirmDelete")}
             </Button>
             <Button
               kind="secondary"
               disabled={busy}
               onClick={() => setDeleting(null)}
             >
-              キャンセル
+              {t("common.cancel")}
             </Button>
           </div>
         </section>

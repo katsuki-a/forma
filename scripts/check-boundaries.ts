@@ -5,12 +5,14 @@ import { parse } from "@babel/parser";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const allowed: Record<string, string[]> = {
-  contracts: ["contracts"],
-  domain: ["domain", "contracts"],
-  client: ["client", "contracts", "design"],
-  server: ["server", "domain", "contracts"],
+  contracts: ["contracts", "localization"],
+  domain: ["domain", "contracts", "localization"],
+  client: ["client", "contracts", "design", "localization"],
+  server: ["server", "domain", "contracts", "localization"],
+  localization: ["localization"],
 };
 const packages: Record<string, string[]> = {
+  localization: ["i18next"],
   contracts: ["zod"],
   domain: [],
   client: ["react", "react-dom", "zod"],

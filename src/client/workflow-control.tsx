@@ -1,3 +1,4 @@
+import { t } from "../localization/index.ts";
 import { useState } from "react";
 import type {
   AppRecord,
@@ -23,10 +24,10 @@ export function WorkflowControl({
   );
   if (!state) return null;
   return (
-    <section className="section" aria-label="状態と担当者">
-      <h3>状態と担当者</h3>
-      <p>現在の状態：{state.name}</p>
-      <FormField label="担当者">
+    <section className="section" aria-label={t("workflow.title")}>
+      <h3>{t("workflow.title")}</h3>
+      <p>{t("workflow.current", { name: state.name })}</p>
+      <FormField label={t("common.assignee")}>
         {(id) => (
           <select
             id={id}
@@ -34,7 +35,7 @@ export function WorkflowControl({
             value={assignee}
             onChange={(event) => setAssignee(event.target.value)}
           >
-            <option value="">未指定</option>
+            <option value="">{t("common.unassigned")}</option>
             {state.assignees.map((userId) => (
               <option key={userId} value={userId}>
                 {definition.directory?.users.find((user) => user.id === userId)
@@ -52,7 +53,7 @@ export function WorkflowControl({
             void onChange({ assigneeId: assignee || null });
           }}
         >
-          担当者を保存
+          {t("workflow.saveAssignee")}
         </Button>
         {definition.workflow?.transitions
           .filter((item) => item.from === state.id)
